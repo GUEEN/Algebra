@@ -12,6 +12,7 @@ public:
 	List();
 	List(int m);
 	List(int m, bool empty);
+	List(int m, const T& a);
 	List(const List<T>& L);
 	List(const List<T>& L, int s, int m); // copy of list L from s with m elements
 	List(List<T>&& L);
@@ -64,6 +65,14 @@ List<T>::List(int m, bool empty): n(m)
 		P = nullptr;
 	else
 		P = new T[m];
+}
+//constructor
+template<class T>
+List<T>::List(int m, const T& a) : n(m)
+{
+	P = new T[m];
+	for (int i = 0; i < m; i++)
+		P[i] = a;
 }
 //constructor
 template<class T>
@@ -122,7 +131,6 @@ List<T>& List<T>::operator = (List<T>&& L)
 		P[i] = L[i];
 	return *this;
 }
-
 //destructor
 template<class T>
 List<T>::~List()
