@@ -73,14 +73,15 @@ bool Perm::isInj() const
 {
 	int n = P.n;
 	bool B = true;
-	int * Q = new int[n];
-	for (int i = 0; i < n; i++) Q[n] = -1;
+	List<int> Q(n);
+	for (int i = 0; i < n; i++)
+		Q[i] = -1;
 	for (int i = 0; i < n && B; i++)
 	{
 		if (Q[P[i]] != -1) B = false;
 		else 
 			Q[P[i]] = i;
-	}
+	}	
 	return B;
 }
 
@@ -95,7 +96,7 @@ bool Perm::isEven() const
 	if (isBij() == false)
 		return false;
 	int n = P.n;
-	List<int> b(n);
+	List<int> b(n, 0);
 	int Q = 0; // number of even cycles
 	for (int i = 0; i < n; i++)
 	{
@@ -108,7 +109,7 @@ bool Perm::isEven() const
 			b[j] = 1;
 			j = P[j];
 			q++;
-		}
+		}		
 		if ((q & 1) == 0)
 			Q++;
 	}
@@ -120,13 +121,12 @@ bool Perm::isEven() const
 
 Perm Perm::operator * (const Perm& T) const
 {
-	int m = T.length();	
-
+	int m = T.length();
 	Perm U(m);
 	for (int i = 0; i < m; i++)
 	{
 		int k = T[i];				
-		if (k >= 0 && k < m)
+		if (k >= 0 && k < P.n)
 			U[i] = P[k];
 		else
 			U[i] = 0;		
@@ -158,6 +158,24 @@ Perm Perm::operator + (int m) const
 	Perm Q(m);
 	Q.id();
 	return *this + Q;
+}
+
+bool Perm::operator ||(const Perm& T) const
+{
+	bool B = true;
+	int n = P.n;
+	if (n != T.length())
+		return false;
+	for (int i = 0; i < n && B; i++)
+	{
+		int k = T[i];
+		if (k < 0 || k >= n)
+			B = false;
+		else
+			if (P[k] != T[P[i]])
+				B = false;
+	}
+	return B;
 }
 
 void Perm::operator = (int m)
@@ -198,7 +216,7 @@ Perm Transposition(int n, int i, int j)
 
 Perm Cycle(int n)
 {
-	Perm C(n);
+	Perm C(n);	
 	for (int i = 0; i < n; i++)
 		C[i] = (i+1) % n;
 	return C;
