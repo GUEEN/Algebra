@@ -6,7 +6,6 @@
 class Group
 {
 friend class SearchNode;
-friend Group D(int m);
 public:	
 	Group(int m);
 	Group(const Group& G);
