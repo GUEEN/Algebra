@@ -21,6 +21,12 @@ public:
 	{
 	}
 
+	Perm(const vector<int>& a) : P(a.size())
+	{
+		for (int i = a.size() - 1; i >= 0; --i)
+			P[i] = a[i];
+	}
+
 	inline int& operator [](int m)
 	{
 		return P[m];
@@ -36,6 +42,8 @@ public:
 	Perm operator ^(const Perm& S) const;
 
 	Perm operator +(const Perm& S) const;
+
+	bool operator||(const Perm& S) const;
 
 	Perm operator +(int m) const;
 
@@ -72,5 +80,6 @@ Perm Cycle(int n);
 
 typedef vector<Perm> PermList;
 typedef vector<Perm>::iterator PermIt;
+typedef vector<Perm>::const_iterator ConstPermIt;
 
 #endif
