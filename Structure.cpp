@@ -14,7 +14,6 @@ std::fstream Structure::stream;
 Perm SearchNode::B;
 Perm SearchNode::F;
 
-
 std::string CertToString(const Certificate& cert)
 {
 	std::string s = "";
@@ -51,7 +50,6 @@ extern int compareCertificates(const Certificate& C, const Certificate& D)
 {
 	if (C.size() > D.size()) return -1;
 	if (C.size() < D.size()) return 1;
-
 
 	int l = C.size();
 	int i = 0;
@@ -266,7 +264,6 @@ void SearchNode::addGen(const Perm& P)
 				
 			if (!G->Gu->contains(Q))
 			{
-
 				if (Next)				
 					Next->addGen(Q);				
 				else
@@ -300,7 +297,6 @@ void SearchNode::addGen(const Perm& P)
 
 				if (!G->Gu->contains(Q))
 				{
-
 					if (Next)
 						Next->addGen(Q);
 					else
@@ -315,7 +311,6 @@ void SearchNode::addGen(const Perm& P)
 
 inline void SearchNode::changeBase(int d)
 {
-
 	SearchNode* Node = LastBaseChange;
 	Group* G = Node->G;
 
@@ -375,7 +370,7 @@ void SearchNode::refine()
 		(*it).discrete = false;
 	}
 
-	// if this partition is discerete, it is refined already	
+	// if this partition is discrete, it is refined already	
 
 	// if not discrete
 	bool Stab = false;
