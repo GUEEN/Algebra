@@ -13,9 +13,7 @@ using std::unordered_set;
 
 typedef char byte;
 typedef List<int> Deg;
-
 typedef List<byte> Certificate;
-//typedef Balance<Certificate> StructList;
 
 std::string CertToString(const Certificate& cert);
 Certificate Cert(const std::string& s);
@@ -60,7 +58,7 @@ class Structure
 friend class SearchNode;
 public:
 	int n;
-	Structure(int m): n(m) {} ;
+	Structure(int n): n(n) {} ;
 
 	void certify();
 	Group aut();
@@ -68,12 +66,12 @@ public:
 	Certificate cert;
 
 	static std::fstream stream;
-	//static void writeStructList(std::string path, StructList& List, bool Append = false);
+	
 	static void writeStruct(const Certificate& cert);
 	static void readStruct(Certificate& cert);
 	static void setReadStream(std::string path);
 
-protected:
+private:
 	
 	static SearchNode* TopSearchNode;	
 	
@@ -101,21 +99,6 @@ public:
 	void stabilise();
 	inline void changeBase(int d);
 
-	static int compInts(const int& a, const int& b)
-	{
-		if (a == b) return 0;
-		if (a > b) return 1;
-		if (a < b) return -1;
-	};
-
-	static int compFloat(const float& a, const float& b)
-	{
-		if (a == b) return 0;
-		if (a > b) return 1;
-		if (a < b) return -1;
-	};
-
-
 private:
 	Part P;
 	int FixedPoint;
@@ -140,6 +123,7 @@ private:
 	static bool Compare(const int& x, const int& y);
 };
 
+// class modelling an unordered collection of non-isomorphic structures. 
 class StructSet
 {
 public:
@@ -151,8 +135,6 @@ public:
 
 private:
 	unordered_set<std::string> set;
-
 };
-
 
 #endif
