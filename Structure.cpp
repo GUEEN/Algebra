@@ -31,23 +31,13 @@ Certificate Cert(const std::string& s)
 		cert[i] = s[i];
 	return cert;
 }
-/*
-void Structure::writeStructList(std::string path, StructList& List, bool Append)
-{
-	if (Append)
-		stream.open(path, std::ios::app | std::ios::out | std::ios::binary);
-	else
-		stream.open(path, std::ios::out|std::ios::binary);	
-	List.traverse(&Structure::writeStruct);		
-	stream.close();
-}*/
 
 void Structure::setReadStream(std::string path)
 {
 	stream.open(path, std::ios::in|std::ios::binary);
 }
 
-inline void Structure::writeStruct(const Certificate& cert)
+void Structure::writeStruct(const Certificate& cert)
 {
 	stream.write(cert.ptr(), cert.n);
 }
@@ -99,8 +89,7 @@ void Structure::certify()
 		Top->Degg[i].renew(s);
 		
 	Cell C(n);
-	for (int i = 0; i < n; i++)
-		//C.add(i);
+	for (int i = 0; i < n; i++)		
 		C.V[i] = i;
 
 	Top->P.push_back(C);
@@ -111,10 +100,8 @@ void Structure::certify()
 	Top->stabilise();
 	
 	cert = getCertificate(Top->B);
-
-	//TopSearchNode->G->order().writeln();	
-	delete[] Top->Degg;
-	//delete Top->G;
+		
+	delete[] Top->Degg;	
 }
 
 Group Structure::aut()
@@ -153,15 +140,12 @@ Group Structure::aut()
 
 	Top->stabilise();
 	
-	//TopSearchNode->G->order().writeln();
-
 	Group* AutoPtr = TopSearchNode->G;
 	
-	delete[] Top->Degg;	
+	delete[] Top->Degg;
 
 	return *AutoPtr;
 }
-
 
 // comparing for sort. Must return true if x goes before y
 bool SearchNode::Compare(const int& x, const int& y)
@@ -217,7 +201,7 @@ inline void SearchNode::updateOrbits(const Perm& Q)
 	if (P.empty())
 		return;
 
-	Cell C = *P.begin();
+	Cell C = P[0];
 	
 	for (int ii = 0; ii < C.V.n; ii++)
 	{
@@ -343,7 +327,7 @@ inline void SearchNode::changeBase(int d)
 			if (Node->Depth <= d)
 			{
 				CellOrbits = 0;
-				Cell C = *Node->P.begin();			
+				Cell C = Node->P[0];			
 				for (int ii = 0; ii < C.V.n; ii++)
 					Node->CellOrbits[C[ii]] = -1;
 			}		
@@ -380,16 +364,16 @@ inline void SearchNode::changeBase(int d)
 
 }
 
-inline void SearchNode::refine()
+void SearchNode::refine()
 {
 
 	// chosing a first non-discrete cell to refine
 		
 	for (PartIt it = P.begin(); it!= P.end(); ++it)
-    {
+	{
 		(*it).counted = false;
 		(*it).discrete = false;
-    }
+	}
 
 	// if this partition is discerete, it is refined already	
 
@@ -496,8 +480,7 @@ inline void SearchNode::refine()
 		{
 			if (!(*c).counted)
 			{
-				Stab = false;
-				//C = *it; // choose C a first uncounted cell
+				Stab = false;				
 				break;
 			}
 			else
@@ -601,12 +584,11 @@ void SearchNode::stabilise()
 			if (G)
 				Next->G = G->Gu;
 		}
-		//Next->P.clear();
+		
 		CellOrbits = 0;		
-		SearchNode* Su = Next;				
-
-		//CellOrbits = new Perm(n);
-		Cell C = *P.begin();
+		SearchNode* Su = Next;
+		
+		Cell C = P[0];
 				
 		for (int ii = 0; ii < C.V.n; ii++)
 			CellOrbits[C[ii]] = -1;
@@ -633,9 +615,8 @@ void SearchNode::stabilise()
 			for (int j = jj + 1; j < C.V.n; j++)
 				C2.V[j - 1] = C.V[j];
 						
-			Pu.push_back(C2);
-						
-			//for (int j = 1; j < P.size(); j++)
+			Pu.push_back(C2);						
+			
 			PartIt it = P.begin();
 			++it;
 						
@@ -665,9 +646,7 @@ void SearchNode::stabilise()
 			}
 						
 			while (jj < C.V.n && CellOrbits[orbitRep(C[jj])] < -n) jj++;
-		}
-		//delete Su;
-		//Next = nullptr;
+		}		
 	}
 
 Finish:
