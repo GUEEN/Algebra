@@ -1,246 +1,303 @@
 #include "Permutation.h"
 
-bool Perm::empty() const
-{
-	return P.empty();
+Perm::Perm(int m): size(m) {
+    data = new int[m];
 }
 
-void Perm::zero()
-{
-	P.clear();
+Perm::~Perm() {
+    delete[] data;
 }
 
-void Perm::id()
-{
-	for (int i = P.n - 1; i >= 0; i--)
-		P[i] = i;
+Perm::Perm(const std::vector<int>& v) : size(v.size()) {
+    data = new int[size];
+    for (int i = 0; i < size; ++i) {
+        data[i] = v[i];
+    }
 }
 
-void Perm::id(int m)
-{
-	if (P.empty())
-		P.renew(m);
-	else
-		if (P.n != m)
-		{
-			P.clear();
-			P.renew(m);
-		}
-	id();
+Perm::Perm(const Perm& perm) : size(perm.size) {
+    data = new int[size];
+    for (int i = 0; i < size; ++i) {
+        data[i] = perm.data[i];
+    }
 }
 
-bool Perm::isValid() const
-{
-	bool B = true;
-	int n = P.n;
-	for (int i = 0; i < n && B; i++)
-		if (P[i] < 0 || P[i] >= n)
-			B = false;
-	return B;
+Perm::Perm(Perm&& perm) : size(perm.size), data(perm.data) {
+    perm.data = nullptr;
+    perm.size = 0;
 }
 
-bool Perm::isConst() const
-{
-	bool B = true;
-	int n = P.n;
-	for (int i = 0; i < n - 1 && B; i++)
-		if (P[i] != P[i+1])
-			B = false;
-	return B;
+Perm& Perm::operator=(const Perm& perm) {
+    if (perm.data == data) {
+        return *this;
+    }
+    delete[] data;
+    size = perm.size;
+    data = new int[size];
+    for (int i = 0; i < size; ++i) {
+        data[i] = perm.data[i];
+    }
+    return *this;
 }
 
-bool Perm::isConst(int m) const
-{
-	bool B = true;
-	int n = P.n;
-	for (int i = 0; i < n && B; i++)
-		if (P[i] != m)
-			B = false;
-	return B;
+Perm& Perm::operator=(Perm&& perm) {
+    if (perm.data == data) {
+        return *this;
+    }
+    delete[] data;
+    size = perm.size;
+    data = perm.data;
+    perm.size = 0;
+    perm.data = nullptr;
+    return *this;
 }
 
-bool Perm::isId() const
-{
-	bool B = true;
-	int n = P.n;
-	for (int i = 0; i < n && B; i++)
-		if (P[i] != i)
-			B = false;
-	return B;
+int& Perm::operator[](int i) {
+    return data[i];
 }
 
-bool Perm::isInj() const
-{
-	int n = P.n;
-	bool B = true;
-	List<int> Q(n);
-	for (int i = 0; i < n; i++)
-		Q[i] = -1;
-	for (int i = 0; i < n && B; i++)
-	{
-		if (Q[P[i]] != -1) B = false;
-		else 
-			Q[P[i]] = i;
-	}	
-	return B;
+const int Perm::operator[](int m) const {
+    return data[m];
 }
 
-bool Perm::isBij() const
-{
-	return isValid() && isInj();
+int Perm::length() const {
+    return size;
 }
 
-// we assume here it is bijective 
-bool Perm::isEven() const
-{
-	if (isBij() == false)
-		return false;
-	int n = P.n;
-	List<int> b(n, 0);
-	int Q = 0; // number of even cycles
-	for (int i = 0; i < n; i++)
-	{
-		if (b[i])
-			continue;
-		int j = i;	
-		int q = 0;
-		while (b[j] == 0)
-		{
-			b[j] = 1;
-			j = P[j];
-			q++;
-		}		
-		if ((q & 1) == 0)
-			Q++;
+bool Perm::empty() const {
+    return size == 0;
+}
+
+void Perm::zero() {
+    delete[] data;
+    data = nullptr;
+    size = 0;
+}
+
+void Perm::id() {
+    for (int i = 0; i < size; ++i) {
+        data[i] = i;
+    }
+}
+
+void Perm::id(int m) {
+    if (empty()) {
+        data = new int[m];
+    } else if (size != m) {
+        delete[] data;
+        data = new int[m];
+    }
+    id();
+}
+
+bool Perm::isValid() const {
+    bool isvalid = true;
+    for (int i = 0; i < size; ++i) {
+        if (data[i] < 0 || data[i] >= size) {
+            isvalid = false;
+            break;
+        }
+    }
+    return isvalid;
+}
+
+bool Perm::isConst() const {
+    bool isconst = true;
+    for (int i = 0; i < size - 1; ++i) {
+        if (data[i] != data[i + 1]) {
+            isconst = false;
+            break;
+        }
+    }
+    return isconst;
+}
+
+bool Perm::isConst(int m) const {
+    bool ism = true;
+    for (int i = 0; i < size; i++) {
+        if (data[i] != m) {
+            ism = false;
+            break;
+        }
+    }
+    return ism;
+}
+
+bool Perm::isId() const {
+    bool isid = true;
+    for (int i = 0; i < size; i++) {
+        if (data[i] != i) {
+            isid = false;
+            break;
+        }
+    }
+    return isid;
+}
+
+bool Perm::isInj() const {
+    bool isinj = true;
+    int* Q = new int[size];
+    for (int i = 0; i < size; i++) {
+        Q[i] = -1;
+    }
+    for (int i = 0; i < size; i++) {
+        if (Q[data[i]] != -1) {
+            isinj = false;
+            break;
+        } else {
+            Q[data[i]] = i;
 	}
-	if (Q & 1)
-		return false;
-	else
-		return true;
+    }
+    delete[] Q;
+    return isinj;
 }
 
-Perm Perm::operator * (const Perm& T) const
-{
-	int m = T.length();
-	Perm U(m);
-	for (int i = 0; i < m; i++)
-	{
-		int k = T[i];				
-		if (k >= 0 && k < P.n)
-			U[i] = P[k];
-		else
-			U[i] = 0;		
-	}	
-	return U;
+bool Perm::isBij() const {
+    return isValid() && isInj();
 }
 
-Perm Perm::operator ^ (const Perm& T) const
-{
-	return Mult(!T, *this, T);
+bool Perm::isEven() const {
+    if (isBij() == false)
+        return false;
+    int* b = new int[size];
+    for (int i = 0; i < size; ++i) {
+        b[i] = 0;
+    }
+    int Q = 0; // number of even cycles
+    for (int i = 0; i < size; i++) {
+        if (b[i])
+            continue;
+        int j = i;	
+        int q = 0;
+        while (b[j] == 0) {
+            b[j] = 1;
+            j = data[j];
+            q++;
+	}		
+        if ((q & 1) == 0)
+            Q++;
+    }
+    delete[] b;
+    if (Q & 1) {
+        return false;
+    } else {
+        return true;
+    }
 }
 
-Perm Perm::operator + (const Perm& T) const
-{
-	int m = T.length();	
-	int n = P.n;
-
-	Perm U(n+m);
-	for (int i = 0; i < n; i++)
-		U[i] = P[i];
-
-	for (int i = 0; i < m; i++)	
-		U[n+i] = T[i]+n;		
-	return U;
+Perm Perm::operator*(const Perm& T) const {
+    int m = T.size;
+    Perm U(m);
+    for (int i = 0; i < m; i++) {
+        int k = T[i];
+        if (k >= 0 && k < size) {
+            U[i] = data[k];
+        } else {
+            U[i] = 0;
+        }
+    }
+    return U;
 }
 
-Perm Perm::operator + (int m) const
-{
-	Perm Q(m);
-	Q.id();
-	return *this + Q;
+Perm Perm::operator^(const Perm& T) const {
+    return Mult(!T, *this, T);
 }
 
-bool Perm::operator ||(const Perm& T) const
-{
-	bool B = true;
-	int n = P.n;
-	if (n != T.length())
-		return false;
-	for (int i = 0; i < n && B; i++)
-	{
-		int k = T[i];
-		if (k < 0 || k >= n)
-			B = false;
-		else
-			if (P[k] != T[P[i]])
-				B = false;
-	}
-	return B;
+Perm Perm::operator+(const Perm& T) const {
+    int m = T.size;
+    Perm U(size + m);
+    for (int i = 0; i < size; i++) {
+        U[i] = data[i];
+    }
+    for (int i = 0; i < m; i++)	{
+        U[size + i] = T[i] + size;
+    }
+    return U;
 }
 
-void Perm::operator = (int m)
-{
-	for (int i = P.n - 1; i >= 0; i-- )
-		P[i] = m;
+Perm Perm::operator+(int m) const {
+    Perm Q(m);
+    Q.id();
+    return *this + Q;
 }
 
-Perm operator + (int m, const Perm& P)
-{
-	int n = P.length();
-	Perm Q(m);
-	Q.id();
-	return Q + P;
+bool Perm::operator||(const Perm& T) const {
+    bool comm = true;
+    if (size != T.size) {
+        return false;
+    }
+    for (int i = 0; i < size; i++) {
+        int k = T[i];
+        if (k < 0 || k >= size) {
+            comm = false;
+            break;
+        } else {
+            if (data[k] != T[data[i]]) {
+                comm = false;
+                break;
+            }
+        }
+    }
+    return comm;
 }
 
-Perm operator ! (const Perm& P)
-{
-	int n = P.length();
-
-	Perm Q(n);
-	for (int i = 0; i < n; i++)
-		Q[P[i]] = i;
-	return Q;
+Perm& Perm::operator=(int m) {
+    for (int i = 0; i < size; ++i) {
+        data[i] = m;
+    }
+    return *this;
 }
 
-Perm Transposition(int n, int i, int j)
-{
-	Perm T(n);
-	T.id();
-	if (0 <= i < n && 0 <= j < n)
-	{
-		T[i] = j;
-		T[j] = i;
-	}
-	return T;
+Perm operator+(int m, const Perm& P) {
+    Perm Q(m);
+    Q.id();
+    return Q + P;
 }
 
-Perm Cycle(int n)
-{
-	Perm C(n);	
-	for (int i = 0; i < n; i++)
-		C[i] = (i+1) % n;
-	return C;
+Perm operator!(const Perm& P) {
+    Perm Q(P.size);
+    for (int i = 0; i < P.size; ++i) {
+        Q[P[i]] = i;
+    }
+    return Q;
 }
 
-Perm Mult(const Perm& P, const Perm& Q, const Perm& R)
-{
-	int n = R.length();	
-	int m = Q.length();
-	int l = P.length();
+Perm Transposition(int n, int i, int j) {
+    Perm T(n);
+    T.id();
+    if (0 <= i && i < n && 0 <= j && j < n) {
+        T[i] = j;
+        T[j] = i;
+    }
+    return T;
+}
 
-	Perm U(n);
-	for (int i = 0; i < n; i++)
-	{
-		int k = R[i];				
-		if (k >= 0 && k < m)
-		{
-			k = Q[k];
-			if (k >= 0 && k < l)
-				U[i] = P[k];
-			else
-				U[i] = 0;
-		}
-		else U[i] = 0;		
-	}	
-	return U;
+Perm Cycle(int n) {
+    Perm C(n);	
+    for (int i = 0; i < n; i++) {
+        C[i] = (i + 1) % n;
+    }
+    return C;
+}
+
+Perm Mult(const Perm& P, const Perm& Q, const Perm& R) {
+    int n = R.length();	
+    int m = Q.length();
+    int l = P.length();
+
+    Perm U(n);
+    for (int i = 0; i < n; i++) {
+        int k = R[i];				
+        if (k >= 0 && k < m) {
+            k = Q[k];
+            if (k >= 0 && k < l) {
+                U[i] = P[k];
+            } else {
+                U[i] = 0;
+            }
+        } else {
+            U[i] = 0;
+        }
+    }
+    return U;
 }
