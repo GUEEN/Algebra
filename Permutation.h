@@ -5,7 +5,7 @@
 
 class Perm {
 public:
-    Perm() = default;
+    Perm();
     explicit Perm(int m);
     Perm(const std::vector<int>& v);
     Perm(const Perm& perm);
@@ -14,9 +14,8 @@ public:
     Perm& operator=(Perm&& perm);
     ~Perm();
 
-    inline int& operator[](int i);
-    inline const int operator[](int m) const;
-	
+    int& operator[](int i);
+    const int operator[](int m) const;	
     Perm operator*(const Perm& S) const;
     Perm operator^(const Perm& S) const;
     Perm operator+(const Perm& S) const;
@@ -39,7 +38,7 @@ public:
     bool isBij() const;
     bool isEven() const;
 
-    inline int length() const;
+    int length() const;
 
 private:
     int size;

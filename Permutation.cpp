@@ -1,5 +1,8 @@
 #include "Permutation.h"
 
+Perm::Perm() : size(0), data(nullptr) {
+}
+
 Perm::Perm(int m): size(m) {
     data = new int[m];
 }
@@ -23,17 +26,19 @@ Perm::Perm(const Perm& perm) : size(perm.size) {
 }
 
 Perm::Perm(Perm&& perm) : size(perm.size), data(perm.data) {
-    perm.data = nullptr;
     perm.size = 0;
+    perm.data = nullptr;
 }
 
 Perm& Perm::operator=(const Perm& perm) {
     if (perm.data == data) {
         return *this;
     }
-    delete[] data;
-    size = perm.size;
-    data = new int[size];
+    if (size != perm.size) {
+        delete[] data;
+        size = perm.size;
+        data = new int[size];
+    }
     for (int i = 0; i < size; ++i) {
         data[i] = perm.data[i];
     }
@@ -56,8 +61,8 @@ int& Perm::operator[](int i) {
     return data[i];
 }
 
-const int Perm::operator[](int m) const {
-    return data[m];
+const int Perm::operator[](int i) const {
+    return data[i];
 }
 
 int Perm::length() const {
@@ -81,11 +86,10 @@ void Perm::id() {
 }
 
 void Perm::id(int m) {
-    if (empty()) {
-        data = new int[m];
-    } else if (size != m) {
+    if (size != m) {
         delete[] data;
         data = new int[m];
+        size = m;
     }
     id();
 }
