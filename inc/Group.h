@@ -1,13 +1,12 @@
+#pragma once
 #include <cinttypes>
 
 #include "Permutation.h"
 
-#ifndef __Group__
-#define __Group__
-
 class Group {
 friend class SearchNode;
 public:
+    Group();
     explicit Group(int m);
     Group(const Group& G);
     Group(Group&& G);
@@ -56,6 +55,3 @@ Group M12();
 Group M22();
 Group M23();
 Group M24();
-
-#endif
-

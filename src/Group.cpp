@@ -1,5 +1,8 @@
 #include "Group.h"
 
+Group::Group() : Group(1) {
+}
+
 Group::Group(int n) : n(n), u(-1), Orbit(n), Generators(), NPoints(1), Gu(nullptr) {
     Cosets = new Perm[n];
     Inverses = new Perm[n];
@@ -291,8 +294,8 @@ Group A(int m) {
             G.addGen(Cycle(m));
         } else {
             G.addGen(1 + Cycle(m - 1));
-            G.addGen(Cycle(3) + (m - 3));
         }
+        G.addGen(Cycle(3) + (m - 3));
     }
     return G;
 }

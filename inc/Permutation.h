@@ -1,7 +1,6 @@
-#include <vector>
+#pragma once
 
-#ifndef __Permutation__
-#define __Permutation__
+#include <vector>
 
 class Perm {
 public:
@@ -52,5 +51,3 @@ Perm Cycle(int n);
 typedef std::vector<Perm> PermList;
 typedef std::vector<Perm>::iterator PermIt;
 typedef std::vector<Perm>::const_iterator ConstPermIt;
-
-#endif
