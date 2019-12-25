@@ -14,11 +14,13 @@ public:
     ~Perm();
 
     int& operator[](int i);
-    const int operator[](int m) const;	
+    const int operator[](int m) const;
     Perm operator*(const Perm& S) const;
     Perm operator^(const Perm& S) const;
     Perm operator+(const Perm& S) const;
+    Perm operator[](const Perm& S) const;
     bool operator||(const Perm& S) const;
+    Perm operator^(int m) const;
     Perm operator+(int m) const;
     Perm& operator=(int m);
     friend Perm operator!(const Perm& P);
@@ -38,6 +40,7 @@ public:
     bool isEven() const;
 
     int length() const;
+    void print() const;
 
 private:
     int size;

@@ -51,7 +51,7 @@ TEST_CASE("Mathieu groups") {
     REQUIRE(M24().order() == 244823040);
 }
 
-TEST_CASE("Normal Subgroups") {
+TEST_CASE("Normal subgroups") {
     for (int n = 3; n <= 100; ++n) {
         REQUIRE((Z(n) << D(n)));
     }

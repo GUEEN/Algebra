@@ -16,5 +16,17 @@ TEST_CASE("simple") {
     REQUIRE(P.length() == 100);
 
     P = Cycle(100);
+    REQUIRE(P.isBij());
     REQUIRE((P || P));
+}
+
+TEST_CASE("commutators") {
+    Perm P = Cycle(100);
+    REQUIRE(P[P].isId());
+}
+
+TEST_CASE("power") {
+    Perm C = Cycle(10000);
+    REQUIRE((C ^ 10000).isId());
+    REQUIRE((C ^ 9999).isId() == false);
 }

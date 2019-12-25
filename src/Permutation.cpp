@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "Permutation.h"
 
 Perm::Perm() : size(0), data(nullptr) {
@@ -5,6 +7,7 @@ Perm::Perm() : size(0), data(nullptr) {
 
 Perm::Perm(int m): size(m) {
     data = new int[m];
+    id();
 }
 
 Perm::~Perm() {
@@ -69,6 +72,13 @@ int Perm::length() const {
     return size;
 }
 
+void Perm::print() const {
+    for (int i = 0; i < size; ++i) {
+        std::cout << data[i] << " ";
+    }
+    std::cout << std::endl;
+}
+
 bool Perm::empty() const {
     return size == 0;
 }
@@ -95,65 +105,53 @@ void Perm::id(int m) {
 }
 
 bool Perm::isValid() const {
-    bool isvalid = true;
     for (int i = 0; i < size; ++i) {
         if (data[i] < 0 || data[i] >= size) {
-            isvalid = false;
-            break;
+            return false;
         }
     }
-    return isvalid;
+    return true;
 }
 
 bool Perm::isConst() const {
-    bool isconst = true;
     for (int i = 0; i < size - 1; ++i) {
         if (data[i] != data[i + 1]) {
-            isconst = false;
-            break;
+            return false;
         }
     }
-    return isconst;
+    return true;
 }
 
 bool Perm::isConst(int m) const {
-    bool ism = true;
     for (int i = 0; i < size; i++) {
         if (data[i] != m) {
-            ism = false;
-            break;
+            return false;
         }
     }
-    return ism;
+    return true;
 }
 
 bool Perm::isId() const {
-    bool isid = true;
     for (int i = 0; i < size; i++) {
         if (data[i] != i) {
-            isid = false;
-            break;
+            return false;
         }
     }
-    return isid;
+    return true;
 }
 
 bool Perm::isInj() const {
-    bool isinj = true;
-    int* Q = new int[size];
-    for (int i = 0; i < size; i++) {
-        Q[i] = -1;
-    }
+    Perm Q(size);
+    Q = -1;
+
     for (int i = 0; i < size; i++) {
         if (Q[data[i]] != -1) {
-            isinj = false;
-            break;
+            return false;
         } else {
             Q[data[i]] = i;
 	}
     }
-    delete[] Q;
-    return isinj;
+    return true;
 }
 
 bool Perm::isBij() const {
@@ -225,24 +223,40 @@ Perm Perm::operator+(int m) const {
     return *this + Q;
 }
 
+Perm Perm::operator^(int m) const {
+    Perm R(size);
+    Perm P = *this;
+    while (m) {
+        if (m & 1) {
+            --m;
+            R = R * P;
+        } else {
+            m >>= 1;
+            P = P * P;
+        }
+    }
+    return R;
+}
+
+Perm Perm::operator[](const Perm& T) const {
+    return (!(*this)) * ((*this) ^ T);
+}
+
 bool Perm::operator||(const Perm& T) const {
-    bool comm = true;
     if (size != T.size) {
         return false;
     }
     for (int i = 0; i < size; i++) {
         int k = T[i];
         if (k < 0 || k >= size) {
-            comm = false;
-            break;
+            return false;
         } else {
             if (data[k] != T[data[i]]) {
-                comm = false;
-                break;
+                return false;
             }
         }
     }
-    return comm;
+    return true;
 }
 
 Perm& Perm::operator=(int m) {
