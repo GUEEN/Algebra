@@ -3,7 +3,7 @@
 Group::Group() : Group(1) {
 }
 
-Group::Group(int n) : n(n), u(-1), Orbit(n), Generators(), NPoints(1), Gu(nullptr) {
+Group::Group(size_t n) : n(n), u(-1), Orbit(n), Generators(), NPoints(1), Gu(nullptr) {
     Cosets = new Perm[n];
     Inverses = new Perm[n];
 }
@@ -11,7 +11,7 @@ Group::Group(int n) : n(n), u(-1), Orbit(n), Generators(), NPoints(1), Gu(nullpt
 Group::Group(const Group& G) : n(G.n), u(G.u), Orbit(G.Orbit), NPoints(G.NPoints), Generators(G.Generators) {
     Cosets = new Perm[n];
     Inverses = new Perm[n];
-    for (int i = 1; i < n; ++i)	{
+    for (size_t i = 1; i < n; ++i)	{
         Cosets[i] = G.Cosets[i];
         Inverses[i] = G.Inverses[i];
     }
@@ -48,7 +48,7 @@ Group& Group::operator=(const Group& G) {
     Cosets = new Perm[n];
     Inverses = new Perm[n];
 
-    for (int i = 1; i < n; ++i)	{
+    for (size_t i = 1; i < n; ++i)	{
         Cosets[i] = G.Cosets[i];
 	Inverses[i] = G.Inverses[i];
     }
@@ -89,34 +89,34 @@ Group::~Group() {
 
 Group Group::operator^(const Perm& P) const {
     Group G(n);
-    for (auto it = Generators.begin(); it != Generators.end(); ++it) {
-        G.addGen((*it) ^ P);
+    for (const Perm& Q : Generators) {
+        G.addGen(Q ^ P);
     }
     return G;
 }
 
 Group Group::operator*(const Group& H) const {
-    int m = H.n;
+    size_t m = H.n;
     Group G(n + m);
-    for (auto it = Generators.begin(); it != Generators.end(); ++it) {
-        G.addGen((*it) + m);
+    for (const Perm& P : Generators) {
+        G.addGen(P + m);
     }
-    for (auto it = H.Generators.begin(); it != H.Generators.end(); ++it) {
-        G.addGen(n + (*it));
+    for (const Perm& Q : H.Generators) {
+        G.addGen(n + Q);
     }
     return G;
 }
 
 bool Group::contains(const Perm& P) const {
     bool id = true;
-    for (int k = 0; k < n; k++) {
+    for (size_t k = 0; k < n; k++) {
         if (P[k] != k) {
             id = false;
             break;
         }
     }
     if (id) {
-	    return true;
+	return true;
     }
     // these two conditions mean that we have a trivial group here
     if (Gu == nullptr) {
@@ -127,11 +127,11 @@ bool Group::contains(const Perm& P) const {
     }
 
     const int v = P[u];
-    if (Cosets[v].length() == 0) {
+    if (Cosets[v].empty()) {
         return false;
     }
 
-    if (Inverses[v].length() == 0) {
+    if (Inverses[v].empty()) {
         Inverses[v] = !Cosets[v];
     }
     return Gu->contains(Inverses[v] * P);
@@ -161,8 +161,8 @@ void Group::addGen(const Perm& P) {
 
     Generators.push_back(P);
 
-    int M = NPoints;
-    int k = 0;
+    size_t M = NPoints;
+    size_t k = 0;
     while (k < M) {
         int v = Orbit[k];
         int w = P[v];
@@ -186,8 +186,7 @@ void Group::addGen(const Perm& P) {
     // apply new generators to all points
     while (k < NPoints) {
        int v = Orbit[k];
-       for (auto it = Generators.begin(); it != Generators.end(); ++it) {
-           const Perm& Gen = *it;
+       for (const Perm& Gen : Generators) {
            int w = Gen[v];
            if (Cosets[w].empty()) {				
                Orbit[NPoints] = w;
@@ -227,8 +226,8 @@ bool Group::isAbelian() const {
 }
 
 bool Group::isEven() const {
-    for (auto it = Generators.begin(); it != Generators.end(); ++it) {
-        if ((*it).isEven() == false) {
+    for (const Perm& P : Generators) {
+        if (P.isEven() == false) {
             return false;
         }
     }
@@ -236,15 +235,15 @@ bool Group::isEven() const {
 }
 
 bool Group::operator<=(const Group& G) const {
-    for (auto it = Generators.begin(); it != Generators.end(); ++it) {
-        if (!G.contains(*it)) {
+    for (const Perm& P : Generators) {
+        if (!G.contains(P)) {
             return false;
         }
     }
     return true;
 }
 
-bool Group::operator >=(const Group& G) const {
+bool Group::operator>=(const Group& G) const {
     return G <= *this;
 }
 
@@ -261,9 +260,9 @@ bool Group::operator>(const Group& G) const {
 }
 // normal subgroup
 bool Group::operator<<(const Group& G) const {
-    for (auto it_g = G.Generators.begin(); it_g != G.Generators.end(); ++it_g) {
-        for (auto it = Generators.begin(); it != Generators.end(); ++it) {
-            if (!contains((*it)^(*it_g))) {
+    for (const Perm& P : G.Generators) {
+        for (const Perm& Q : Generators) {
+            if (!contains(Q ^ P)) {
                 return false;
             }
         }
@@ -276,7 +275,7 @@ bool Group::operator>>(const Group& G) const {
 }
 
 // symmetric group
-Group S(int m) {
+Group S(size_t m) {
     Group S(m);
     // symmetric group on  n  points
     if (m > 1) {
@@ -287,7 +286,7 @@ Group S(int m) {
     return S;
 }
 // alternating group
-Group A(int m) {
+Group A(size_t m) {
     Group G(m);
     if (m > 2) {
         if (m & 1) {
@@ -300,7 +299,7 @@ Group A(int m) {
     return G;
 }
 // cyclic group
-Group Z(int m) {
+Group Z(size_t m) {
     Group G(m);
     if (m > 1) {
         G.addGen(Cycle(m));
@@ -308,7 +307,7 @@ Group Z(int m) {
     return G;
 }
 // dyhedral group
-Group D(int m) {
+Group D(size_t m) {
     Group G(m);
     if (m == 1) {
         return Z(2);
@@ -320,7 +319,7 @@ Group D(int m) {
     G.addGen(Cycle(m));
     Perm P(m);
     P[0] = 0;
-    for (int i = 1; 2 * i <= m; i++) {
+    for (size_t i = 1; 2 * i <= m; i++) {
         P[i] = m - i;
         P[m - i] = i;
     }		

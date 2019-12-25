@@ -7,7 +7,7 @@ class Group {
 friend class SearchNode;
 public:
     Group();
-    explicit Group(int m);
+    explicit Group(size_t m);
     Group(const Group& G);
     Group(Group&& G);
     Group& operator=(const Group& G);
@@ -31,23 +31,23 @@ public:
     bool operator>>(const Group& G) const;
 
 private:
-    int n; // order of the permutation presentation
+    size_t n; // order of the permutation presentation
     int u; // a fixed element
 
     PermList Generators; // generators of the group
 
     Perm Orbit; // orbit of u
-    int NPoints; // number of points in Orbit	
+    size_t NPoints; // number of points in Orbit	
 
     Perm* Cosets; // coset representatives
     Perm* Inverses; // inverses of coset representatives
     Group* Gu; // stabilizer of u;
 };
 
-Group S(int m);
-Group A(int m);
-Group Z(int m);
-Group D(int m);
+Group S(size_t m);
+Group A(size_t m);
+Group Z(size_t m);
+Group D(size_t m);
 Group K4();
 Group Q8();
 Group M11();

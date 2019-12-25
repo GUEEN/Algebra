@@ -13,7 +13,7 @@ TEST_CASE("simple") {
     REQUIRE(P.isConst(33) == true);
 
     P = Perm(100);
-    REQUIRE(P.length() == 100);
+    REQUIRE(P.size() == 100);
 
     P = Cycle(100);
     REQUIRE(P.isBij());

@@ -5,7 +5,7 @@
 class Perm {
 public:
     Perm();
-    explicit Perm(int m);
+    explicit Perm(size_t m);
     Perm(const std::vector<int>& v);
     Perm(const Perm& perm);
     Perm(Perm&& perm);
@@ -13,23 +13,25 @@ public:
     Perm& operator=(Perm&& perm);
     ~Perm();
 
-    int& operator[](int i);
-    const int operator[](int m) const;
+    int& operator[](size_t i);
+    const int operator[](size_t i) const;
     Perm operator*(const Perm& S) const;
     Perm operator^(const Perm& S) const;
     Perm operator+(const Perm& S) const;
     Perm operator[](const Perm& S) const;
     bool operator||(const Perm& S) const;
     Perm operator^(int m) const;
-    Perm operator+(int m) const;
+    Perm operator+(size_t m) const;
     Perm& operator=(int m);
     friend Perm operator!(const Perm& P);
-    friend Perm operator+(int m, const Perm& P);
+    friend Perm operator+(size_t m, const Perm& P);
 
+    size_t size() const;
+    void print() const;
     bool empty() const;
-    void zero();
+    void clear();
     void id();
-    void id(int m);
+    void id(size_t m);
 	
     bool isValid() const;
     bool isConst() const;
@@ -39,17 +41,14 @@ public:
     bool isBij() const;
     bool isEven() const;
 
-    int length() const;
-    void print() const;
-
 private:
-    int size;
-    int* data;
+    size_t size_;
+    int* data_;
 };
 
 Perm Mult(const Perm& P, const Perm &Q, const Perm& R);
-Perm Transposition(int n, int i, int j);
-Perm Cycle(int n);
+Perm Transposition(size_t n, int i, int j);
+Perm Cycle(size_t n);
 
 typedef std::vector<Perm> PermList;
 typedef std::vector<Perm>::iterator PermIt;
