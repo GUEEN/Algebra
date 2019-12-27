@@ -4,6 +4,8 @@ add_executable(test_group test_group.cpp)
 add_library(source STATIC
     ${PROJECT_SOURCE_DIR}/src/Permutation.cpp
     ${PROJECT_SOURCE_DIR}/src/Group.cpp
+    ${PROJECT_SOURCE_DIR}/src/Structure.cpp
+    ${PROJECT_SOURCE_DIR}/src/Graph.cpp
 )
 
 target_link_libraries(test_permutation

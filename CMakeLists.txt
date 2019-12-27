@@ -11,12 +11,12 @@ find_package(Catch REQUIRED)
 set(SOURCES
     src/Permutation.cpp
     src/Group.cpp
-    #src/Structure.cpp
+  #  src/Structure.cpp
 )
 
 add_library(unit_tests
     tests/test_permutation.cpp
-    #tests/test_group.cpp
+    tests/test_group.cpp
 )
 
 add_subdirectory(tests)

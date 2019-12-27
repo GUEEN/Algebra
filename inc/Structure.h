@@ -1,57 +1,46 @@
+#pragma once
+
 #include <fstream>
 #include <unordered_set>
+#include <functional>
 #include <vector>
 #include <string>
 
 #include "Group.h"
 
-#ifndef __Structure__
-#define __Structure__
-
 typedef char byte;
-typedef List<int> Deg;
-typedef List<byte> Certificate;
+typedef std::vector<int> Deg;
+typedef std::vector<byte> Certificate;
 
 std::string CertToString(const Certificate& cert);
 Certificate Cert(const std::string& s);
 
 int compareCertificates(const Certificate& C, const Certificate& D);
 
-struct Cell {
-    int* data;
+struct Cell : public Perm {
+    Cell() : Perm(), counted(false), discrete(false) {};
+    explicit Cell(size_t m): Perm(m), counted(false), discrete(false) {};
+    Cell(const Cell& W, int s, int m): counted(false), discrete(false), Perm(m) {
+        for (int i = 0; i < m; ++i) {
+            data_[i] = W[s + i];
+        }
+    };
+    void sort(const std::function<int(int,int)>& comp);
 
     bool counted;
     bool discrete;
-
-    Cell() : counted(false), discrete(false), data(nullptr) {};
-    explicit Cell(int m): counted(false), discrete(false), data(new int[m]) {};
-   // Cell(const List<int>& W, int s, int m): counted(false), discrete(false), V(W, s, m) {};
-    ~Cell() {
-        delete[] data;
-    }
-
-    int& operator[](int m) {
-        return data[m];
-    }
-
-    int operator[](int m) const	{
-        return data[m];
-    }
-
-    void clear() {
-        delete[] data;
-        data = nullptr;
-    }
 };
 
 typedef std::vector<Cell> Part;
 
+class SearchNode;
 // abstract class containing all algebraic structures such as
 // graphs, digraphs, hypergraphs, semigroups, posets, lattices
 class Structure {
 friend class SearchNode;
 public:
-    Structure(int n): n(n) {} ;
+    explicit Structure(size_t n): n(n) {} ;
+    size_t size() const;
 
     void certify();
     Group aut();
@@ -62,21 +51,20 @@ public:
     static void readStruct(Certificate& cert);
     static void setReadStream(const std::string& path);
 
-private:
-    int n;
-	
+protected:
+    size_t n;	
     static SearchNode* TopSearchNode;
 
     virtual int compareOrders(const Perm& P, const Perm& Q, int p, int q) const = 0;
-    virtual int degsize() const = 0;
-    virtual int color(int ii, int jj) const = 0;
+    virtual size_t degsize() const = 0;
+    virtual int color(size_t ii, size_t jj) const = 0;
     virtual Certificate getCertificate(const Perm& P) const = 0;
 };
 
 class SearchNode {
 friend class Structure;
 public:
-    SearchNode(int n) : G(nullptr), Next(nullptr), OnBestPath(false), CellOrbits(n) {};
+    SearchNode(size_t n) : G(nullptr), Next(nullptr), OnBestPath(false), CellOrbits(n) {};
     ~SearchNode() {
         delete Next;
     };
@@ -95,7 +83,7 @@ private:
     Group* G;
     Perm CellOrbits;
     int Depth;
-    int NFixed;
+    size_t NFixed;
     bool OnBestPath;
     SearchNode* Next;
 	
@@ -110,14 +98,14 @@ private:
     static bool IsDiscrete;
     static SearchNode* LastBaseChange;
 
-    static bool Compare(const int& x, const int& y);
+    static bool Compare(int x, int y);
 };
 
 // class modelling an unordered collection of non-isomorphic structures. 
 class StructSet {
 public:
     void add(const Certificate& cert);
-    int size() { return set.size(); }
+    size_t size() { return set.size(); }
     void write(std::string path, bool Append = false) const;
     void clear();
     bool contains(const Certificate& cert) const;
@@ -125,5 +113,3 @@ public:
 private:
     std::unordered_set<std::string> set;
 };
-
-#endif

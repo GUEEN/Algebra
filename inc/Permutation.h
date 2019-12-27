@@ -41,7 +41,7 @@ public:
     bool isBij() const;
     bool isEven() const;
 
-private:
+protected:
     size_t size_;
     int* data_;
 };
