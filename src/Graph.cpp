@@ -54,7 +54,7 @@ Certificate Graph::getCertificate(const Perm& P) const {
     int q = 0;
     byte b = 0;
 
-    for (size_t i = 0; i < n - 1; i++) {
+    for (size_t i = 0; i + 1 < n; i++) {
         for (size_t j = i + 1; j < n; j++) {			
             b = b * 2 + A[n * P[i] + P[j]];
             q++;
@@ -132,7 +132,7 @@ bool Graph::nextS(int level, Perm& Q) const {
 
 bool readGraph(Graph& G) {
     size_t n = G.size();
-    int l = (n * (n - 1)) / 2;
+    size_t l = (n * (n - 1)) / 2;
     if (l % 8 == 0) {
         l /= 8;
     } else {
@@ -180,7 +180,7 @@ bool readGraph(Graph& G) {
 
 Graph operator+(const Graph& G, size_t m) {
     size_t n = G.n;
-    Graph H(m + n, 0);
+    Graph H(m + n);
     for (size_t ii = 0; ii < n; ii++) {
         for (size_t jj = ii + 1; jj < n; jj++) {
             if (G.edge(ii, jj)) {
@@ -193,7 +193,7 @@ Graph operator+(const Graph& G, size_t m) {
 
 Graph operator+(size_t m, const Graph& G) {
     size_t n = G.n;
-    Graph H(m + n, G.e);
+    Graph H(m + n);
     for (size_t ii = 0; ii < n; ii++) {
         for (size_t jj = ii + 1; jj < n; jj++) {
             if (G.edge(ii, jj)) {
@@ -208,9 +208,9 @@ Graph operator+(const Graph& G, const Graph& H) {
     size_t n = G.n;
     size_t m = H.n;
 
-    Graph F(n + m, G.e + H.e);
+    Graph F(n + m);
 
-    for (size_t i = 0; i < n - 1; i++) {
+    for (size_t i = 0; i + 1 < n; i++) {
         for (size_t j = i + 1; j < n; j++) {
             if (G.edge(i, j)) {
                 F.addEdge(i, j);
@@ -218,7 +218,7 @@ Graph operator+(const Graph& G, const Graph& H) {
         }
     }
 
-    for (size_t i = 0; i < m - 1; i++) {
+    for (size_t i = 0; i + 1 < m; i++) {
         for (size_t j = i + 1; j < m; j++) {
             if (H.edge(i, j)) {
                 F.addEdge(n + i, n + j);
@@ -230,10 +230,10 @@ Graph operator+(const Graph& G, const Graph& H) {
 
 Graph K(size_t n) {
     if (n <= 1) {
-        return Graph(1, 0);
+        return Graph(1);
     }
-    Graph G(n, 0);
-    for (size_t i = 0; i < n - 1; i++) {
+    Graph G(n);
+    for (size_t i = 0; i + 1 < n; i++) {
         for (size_t j = i + 1; j < n; j++) {
             G.addEdge(i, j);
         }
@@ -242,7 +242,7 @@ Graph K(size_t n) {
 }
 
 Graph K(size_t n, size_t m) {
-    Graph G(n + m, 0);
+    Graph G(n + m);
     for (size_t i = 0; i < n; i++) {
         for (size_t j = n; j < n + m; j++) {
             G.addEdge(i, j);
@@ -252,8 +252,8 @@ Graph K(size_t n, size_t m) {
 }
 
 Graph C(size_t n) {
-    Graph G(n, 0);
-    for (size_t i = 0; i < n - 1; i++) {
+    Graph G(n);
+    for (size_t i = 0; i + 1 < n; i++) {
         G.addEdge(i, i + 1);
     }
     G.addEdge(0, n - 1);
@@ -262,13 +262,12 @@ Graph C(size_t n) {
 
 Graph Q(size_t n) {
     if (n == 0) {
-        return Graph(1, 0);
+        return Graph(1);
     }
     Graph G = Q(n - 1) + Q(n - 1);
-    n /= 2;
-
-    for (size_t i = 0; i < n; i++) {
-        G.addEdge(i, i + n);
+    size_t m = G.size() >> 1;
+    for (size_t i = 0; i < m; i++) {
+        G.addEdge(i, i + m);
     }
     return G;
 }

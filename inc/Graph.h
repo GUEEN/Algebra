@@ -8,10 +8,7 @@ public:
 
     Graph() : Structure(0), e(0) {}
 
-    Graph(size_t n) : Structure(n), A(n * n, 0), e(0) {
-    }
-
-    Graph(size_t n, size_t e) : Structure(n), A(n * n, 0), e(e) {
+    explicit Graph(size_t n) : Structure(n), A(n * n, 0), e(0) {
     }
 
     size_t edges() const;
