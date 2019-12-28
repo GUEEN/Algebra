@@ -43,34 +43,33 @@ int Graph::compareOrders(const Perm& F, const Perm& B, int p, int q) const {
 Certificate Graph::getCertificate(const Perm& P) const {
     int l = n * (n - 1) / 2;
     if (l % 8 == 0) {
-        l /= 8;
+        l >>= 3;
     } else {
-        l = l / 8  + 1;
+        l >>= 3;
+        l++;
     }
 
-    //Certificate C(n * (n - 1) / 2);
     Certificate C(l);
 
-    int q = 0;
+    size_t q = 0;
     byte b = 0;
 
     for (size_t i = 0; i + 1 < n; i++) {
-        for (size_t j = i + 1; j < n; j++) {			
+        for (size_t j = i + 1; j < n; j++)	{			
             b = b * 2 + A[n * P[i] + P[j]];
             q++;
-
             if (q % 8 == 0) {
                 C[q / 8 - 1] = b;
                 b = 0;
             }
+	}
+    }
+    if (q < 8 * l) {
+        while (q < 8 * l) {
+            q++;
+            b = b * 2;		
         }
-	if (q < 8 * l) {
-            while (q < 8 * l) {
-                q++;
-                b = b * 2;		
-            }
-            C[q / 8 - 1] = b;
-        }
+        C[q / 8 - 1] = b;
     }
     return C;
 }
@@ -129,7 +128,7 @@ bool Graph::nextS(int level, Perm& Q) const {
     } 
     return false;
 }
-
+/*
 bool readGraph(Graph& G) {
     size_t n = G.size();
     size_t l = (n * (n - 1)) / 2;
@@ -176,7 +175,7 @@ bool readGraph(Graph& G) {
         }
     }
     return true;
-}
+}*/
 
 Graph operator+(const Graph& G, size_t m) {
     size_t n = G.n;
