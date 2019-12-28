@@ -5,10 +5,11 @@
 #include <functional>
 #include <vector>
 #include <string>
+#include <list>
 
 #include "Group.h"
 
-typedef char byte;
+typedef uint8_t byte;
 typedef std::vector<int> Deg;
 typedef std::vector<byte> Certificate;
 
@@ -31,7 +32,7 @@ struct Cell : public Perm {
     bool discrete;
 };
 
-typedef std::vector<Cell> Part;
+typedef std::list<Cell> Part;
 
 class SearchNode;
 // abstract class containing all algebraic structures such as
@@ -59,6 +60,8 @@ protected:
     virtual size_t degsize() const = 0;
     virtual int color(size_t ii, size_t jj) const = 0;
     virtual Certificate getCertificate(const Perm& P) const = 0;
+
+    friend bool isomorphic(const Structure& s, const Structure& t);
 };
 
 class SearchNode {

@@ -66,8 +66,11 @@ TEST_CASE("simple isomorphism") {
 
     REQUIRE(isomorphic(G, H));
 
-    G = C(6);
+    G = C(5);
     H = K(2, 3);
+
+    REQUIRE(G.edges() == 5);
+    REQUIRE(H.edges() == 6);
     G.certify();
     H.certify();
 
