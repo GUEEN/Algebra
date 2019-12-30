@@ -14,7 +14,7 @@ public:
     ~Perm();
 
     int& operator[](size_t i);
-    const int operator[](size_t i) const;
+    const int& operator[](size_t i) const;
     Perm operator*(const Perm& S) const;
     Perm operator^(const Perm& S) const;
     Perm operator+(const Perm& S) const;

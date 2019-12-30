@@ -26,6 +26,15 @@ TEST_CASE("lower degree") {
 
     G = K(20, 30);
     REQUIRE(G.deg() == 20);
+
+    G = Q(10);
+    REQUIRE(G.deg() == 10);
+
+    G = K(20) + 4;
+    REQUIRE(G.deg() == 0);
+
+    G = P(100) + P(100);
+    REQUIRE(G.deg() == 1);
 }
 
 TEST_CASE("special graphs") {
@@ -44,6 +53,10 @@ TEST_CASE("special graphs") {
     G = K(50, 50);
     REQUIRE(G.size() == 100);
     REQUIRE(G.edges() == 2500);
+
+    G = P(100);
+    REQUIRE(G.size() == 100);
+    REQUIRE(G.edges() == 99);
 }
 
 TEST_CASE("simple isomorphism") {
@@ -90,6 +103,11 @@ TEST_CASE("automorphism groups") {
         Graph G = C(i);
         Group A = G.aut();
         REQUIRE(A.order() == 2 * i);
+    }
+    for (size_t i = 2; i < 50; ++i) {
+        Graph G = P(i);
+        Group A = G.aut();
+        REQUIRE(A.order() == 2);
     }
     r = 2;
     for (size_t i = 1; i < 12; ++i, r *= i * i) {

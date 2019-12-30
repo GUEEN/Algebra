@@ -19,20 +19,61 @@ Degrees Graph::getDegrees()
 	return D;
 }*/
 
+
+Graph::Graph() : Structure(0), e(0) {
+}
+
+Graph::Graph(size_t n) : Structure(n), A(n * n, 0), e(0) {
+}
+
+bool Graph::edge(size_t i, size_t j) const {
+    return A[n * i + j] != 0;
+}
+
+void Graph::resize(size_t m) {
+    n = m;
+    A.assign(m * m, 0);
+    e = 0;
+}
+
+void Graph::addEdge(size_t i, size_t j) {
+    byte c = A[n * i + j];
+    if (c == 0) {
+        A[n * i + j] = 1;
+        A[n * j + i] = 1;
+        e++;
+    }
+}
+
+void Graph::killEdge(size_t i, size_t j) {
+    byte c = A[n * i + j];
+    if (c == 1) {
+        A[n * i + j] = 0;
+        A[n * j + i] = 0;
+        e--;
+    }
+}
+
+size_t Graph::degsize() const {
+    return 1;
+}
+
+int Graph::color(size_t i, size_t j) const {
+    return static_cast<int>(A[n * i + j]);
+}
+
 size_t Graph::edges() const {
     return e;
 }
 
-int Graph::compareOrders(const Perm& F, const Perm& B, int p, int q) const {
-    for (int i = p; i < q; i++) {
-        for (int j = 0; j < i; j++) {
-	//for (int j = p; j < q; j++)
-	//	for (int i = 0; i < j; i++)
+int Graph::compareOrders(const Perm& F, const Perm& B, size_t p, size_t q) const {
+    for (size_t i = p; i < q; i++) {
+        for (size_t j = 0; j < i; j++) {
              if (A[n * F[i] + F[j]] > A[n * B[i] + B[j]]) {
                  return 1;
              } else {
                  if (A[n * F[i] + F[j]] < A[n * B[i] + B[j]]) {
-                     return  -1;
+                     return -1;
                  }
              }
         }
@@ -41,7 +82,7 @@ int Graph::compareOrders(const Perm& F, const Perm& B, int p, int q) const {
 }
 
 Certificate Graph::getCertificate(const Perm& P) const {
-    int l = n * (n - 1) / 2;
+    size_t l = n * (n - 1) / 2;
     if (l % 8 == 0) {
         l >>= 3;
     } else {
@@ -85,10 +126,16 @@ size_t Graph::deg() {
         for (size_t j = 0; j < n; j++) {
             if (edge(i, j)) {
                 dd++;
+                if (dd >= d) {
+                    break;
+                }
             }
         }
         if (dd < d) {
             d = dd;
+        }
+        if (dd == 0) {
+           return 0;
         }
     }
     return d;
@@ -128,14 +175,15 @@ bool Graph::nextS(int level, Perm& Q) const {
     } 
     return false;
 }
-/*
+
 bool readGraph(Graph& G) {
     size_t n = G.size();
-    size_t l = (n * (n - 1)) / 2;
+    size_t l = n * (n - 1) / 2;
     if (l % 8 == 0) {
-        l /= 8;
+        l >>= 3;
     } else {
-        l = l / 8 + 1;
+        l >>= 3;
+        l++;
     }
 
     G.resize(n);
@@ -147,7 +195,7 @@ bool readGraph(Graph& G) {
         return false;
     }
 
-    G.cert = cert;
+    G.cert = std::make_unique<Certificate>(cert);
 
     size_t ii = 0;
     size_t jj = 1;
@@ -175,7 +223,7 @@ bool readGraph(Graph& G) {
         }
     }
     return true;
-}*/
+}
 
 Graph operator+(const Graph& G, size_t m) {
     size_t n = G.n;
@@ -256,6 +304,14 @@ Graph C(size_t n) {
         G.addEdge(i, i + 1);
     }
     G.addEdge(0, n - 1);
+    return G;
+}
+
+Graph P(size_t n) {
+    Graph G(n);
+    for (size_t i = 0; i + 1 < n; i++) {
+        G.addEdge(i, i + 1);
+    }
     return G;
 }
 

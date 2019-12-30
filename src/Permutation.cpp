@@ -64,7 +64,7 @@ int& Perm::operator[](size_t i) {
     return data_[i];
 }
 
-const int Perm::operator[](size_t i) const {
+const int& Perm::operator[](size_t i) const {
     return data_[i];
 }
 

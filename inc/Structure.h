@@ -5,6 +5,7 @@
 #include <functional>
 #include <vector>
 #include <string>
+#include <memory>
 #include <list>
 
 #include "Group.h"
@@ -19,13 +20,9 @@ Certificate Cert(const std::string& s);
 int compareCertificates(const Certificate& C, const Certificate& D);
 
 struct Cell : public Perm {
-    Cell() : Perm(), counted(false), discrete(false) {};
-    explicit Cell(size_t m): Perm(m), counted(false), discrete(false) {};
-    Cell(const Cell& W, int s, int m): counted(false), discrete(false), Perm(m) {
-        for (int i = 0; i < m; ++i) {
-            data_[i] = W[s + i];
-        }
-    };
+    Cell();
+    explicit Cell(size_t m);
+    Cell(const Cell& W, int s, int m);
     void sort(const std::function<int(int,int)>& comp);
 
     bool counted;
@@ -40,12 +37,10 @@ class SearchNode;
 class Structure {
 friend class SearchNode;
 public:
-    explicit Structure(size_t n): n(n) {} ;
+    explicit Structure(size_t n);
     size_t size() const;
-
     void certify();
     Group aut();
-    Certificate cert;
 
     static std::fstream stream;	
     static void writeStruct(const Certificate& cert);
@@ -53,27 +48,26 @@ public:
     static void setReadStream(const std::string& path);
 
 protected:
-    size_t n;	
-    static SearchNode* TopSearchNode;
-
-    virtual int compareOrders(const Perm& P, const Perm& Q, int p, int q) const = 0;
+    virtual int compareOrders(const Perm& P, const Perm& Q, size_t p, size_t q) const = 0;
     virtual size_t degsize() const = 0;
-    virtual int color(size_t ii, size_t jj) const = 0;
+    virtual int color(size_t i, size_t j) const = 0;
     virtual Certificate getCertificate(const Perm& P) const = 0;
 
     friend bool isomorphic(const Structure& s, const Structure& t);
+
+    size_t n;
+    std::shared_ptr<Certificate> cert;
+    static SearchNode* TopSearchNode;
 };
 
 class SearchNode {
 friend class Structure;
 public:
-    SearchNode(size_t n) : G(nullptr), Next(nullptr), OnBestPath(false), CellOrbits(n) {};
-    ~SearchNode() {
-        delete Next;
-    };
+    SearchNode(size_t n);
+    ~SearchNode();
 	
-    int orbitRep(int v);
-    void merge(int uRep, int vRep);
+    int orbitRep(size_t v);
+    void merge(size_t u, size_t v);
     void updateOrbits(const Perm& Q);
     void addGen(const Perm& Q);
     inline void refine();
@@ -85,7 +79,7 @@ private:
     int FixedPoint;
     Group* G;
     Perm CellOrbits;
-    int Depth;
+    size_t Depth;
     size_t NFixed;
     bool OnBestPath;
     SearchNode* Next;
@@ -94,13 +88,11 @@ private:
     static Perm B;
     static Deg* Degg;
     static const Structure* S;
-
     static bool AutoFound;
     static bool Bexists;
     static int BasisOK;
     static bool IsDiscrete;
     static SearchNode* LastBaseChange;
-
     static bool Compare(int x, int y);
 };
 
@@ -108,7 +100,7 @@ private:
 class StructSet {
 public:
     void add(const Certificate& cert);
-    size_t size() { return set.size(); }
+    size_t size() const;
     void write(std::string path, bool Append = false) const;
     void clear();
     bool contains(const Certificate& cert) const;

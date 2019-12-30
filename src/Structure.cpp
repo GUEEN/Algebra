@@ -16,16 +16,28 @@ std::fstream Structure::stream;
 Perm SearchNode::B;
 Perm SearchNode::F;
 
+Cell::Cell() : Perm(), counted(false), discrete(false) {
+};
+
+Cell::Cell(size_t m): Perm(m), counted(false), discrete(false) {
+};
+
+Cell::Cell(const Cell& W, int s, int m): counted(false), discrete(false), Perm(m) {
+    for (size_t i = 0; i < m; ++i) {
+        data_[i] = W[s + i];
+    }
+};
+
 void Cell::sort(const std::function<int(int,int)>& comp) {
     std::sort(data_, data_ + size_, comp);
 }
 
-std::string CertToString(const Certificate& cert)
-{
-	std::string s;
-	for (int i = 0; i < cert.size(); i++)
-		s.push_back(cert[i]);
-	return s;
+std::string CertToString(const Certificate& cert) {
+    std::string s;
+    for (int i = 0; i < cert.size(); i++) {
+        s.push_back(cert[i]);
+    }
+    return s;
 }
 
 Certificate Cert(const std::string& s) {
@@ -46,6 +58,9 @@ void Structure::writeStructList(std::string path, StructList& List, bool Append)
 	List.traverse(&Structure::writeStruct);		
 	stream.close();
 }*/
+
+Structure::Structure(size_t n): n(n) {
+};
 
 size_t Structure::size() const {
     return n;
@@ -90,7 +105,7 @@ int compareCertificates(const Certificate& C, const Certificate& D) {
 }
 
 bool isomorphic(const Structure& s, const Structure& t) {
-    int r = compareCertificates(s.cert, t.cert);
+    int r = compareCertificates(*s.cert, *t.cert);
     return r == 0;
 }
 
@@ -127,7 +142,7 @@ void Structure::certify() {
 
     Top->stabilise();
 
-    cert = getCertificate(Top->B);
+    cert = std::make_shared<Certificate>(getCertificate(Top->B));
     delete[] Top->Degg;
 }
 
@@ -170,7 +185,14 @@ Group Structure::aut() {
     return *AutoPtr;
 }
 
-// comparing for sort. Must return true if x goes before y
+SearchNode::SearchNode(size_t n) : G(nullptr), Next(nullptr), OnBestPath(false), CellOrbits(n) {
+};
+
+SearchNode::~SearchNode() {
+    delete Next;
+};
+
+// comparing for sort. Must return true if node x goes before y
 bool SearchNode::Compare(int x, int y) {
     size_t s = SearchNode::Degg[x].size();
     if (Degg[y].size() < s) {
@@ -195,7 +217,7 @@ bool SearchNode::Compare(int x, int y) {
     return false;
 }
 
-int SearchNode::orbitRep(int v) {
+int SearchNode::orbitRep(size_t v) {
     if (CellOrbits[v] < 0) {
         return v;
     }
@@ -204,19 +226,19 @@ int SearchNode::orbitRep(int v) {
     return w;
 }
 
-void SearchNode::merge(int uRep, int vRep) {
-    int uSize = -CellOrbits[uRep];
-    int vSize = -CellOrbits[vRep];
+void SearchNode::merge(size_t u, size_t v) {
+    int u_size = -CellOrbits[u];
+    int v_size = -CellOrbits[v];
 
     int w;
-    if (uSize < vSize) {
-        CellOrbits[uRep] = vRep;
-        w = vRep;
+    if (u_size < v_size) {
+        CellOrbits[u] = v;
+        w = v;
     } else {
-        CellOrbits[vRep] = uRep;
-        w = uRep;
+        CellOrbits[v] = u;
+        w = u;
     }
-    CellOrbits[w] = -uSize - vSize;	
+    CellOrbits[w] = -u_size - v_size;
 }
 
 void SearchNode::updateOrbits(const Perm& Q) {
@@ -225,8 +247,8 @@ void SearchNode::updateOrbits(const Perm& Q) {
     }
 
     const Cell& C = P.front();
-    for (size_t ii = 0; ii < C.size(); ii++) {
-        int u = C[ii];
+    for (size_t i = 0; i < C.size(); i++) {
+        int u = C[i];
         int v = Q[u];
     	
         int uRep = orbitRep(u);
@@ -323,8 +345,8 @@ void SearchNode::addGen(const Perm& P) {
 }
 
 void SearchNode::changeBase(int d) {
-    SearchNode* Node = LastBaseChange;
-    Group* G = Node->G;
+    SearchNode* node = LastBaseChange;
+    Group* G = node->G;
 
     if (G == nullptr) {
         return;
@@ -333,17 +355,17 @@ void SearchNode::changeBase(int d) {
         return;
     }
 
-    while (Node) {
-        if (Node->Depth <= d) {
+    while (node) {
+        if (node->Depth <= d) {
             CellOrbits = 0;
-            const Cell& C = Node->P.front();			
-            for (size_t ii = 0; ii < C.size(); ii++) {
-                Node->CellOrbits[C[ii]] = -1;
+            const Cell& C = node->P.front();			
+            for (size_t i = 0; i < C.size(); i++) {
+                node->CellOrbits[C[i]] = -1;
             }
         }		
-        Node = Node->Next;
+        node = node->Next;
     }
-    Node = LastBaseChange;
+    node = LastBaseChange;
     PermList Geners = G->Generators;
 
     size_t n = G->n;
@@ -393,11 +415,11 @@ void SearchNode::refine() {
 
     do { // repeat until we get a stable partition
         const Cell& C = *c;		
-        for (size_t ii = 0; ii < C.size(); ii++) {			
-            for (size_t jj = 0; jj < n; jj++) {
-                int col = S->color(C[ii], jj);
+        for (size_t i = 0; i < C.size(); i++) {			
+            for (size_t j = 0; j < n; j++) {
+                int col = S->color(C[i], j);
                 if (col) {
-                    Degg[jj][col - 1]++;
+                    Degg[j][col - 1]++;
                 }
             }
         }
@@ -408,8 +430,8 @@ void SearchNode::refine() {
         for (Cell CC : P) {
 	    // first we treat discrete cells by adding them to F array
 	    if (CC.size() == 1 || CC.discrete) { //
-                for (size_t ii = 0; ii < CC.size(); ii++) {
-                    F[NFixed++] = CC[ii];
+                for (size_t i = 0; i < CC.size(); i++) {
+                    F[NFixed++] = CC[i];
                 }
                 continue;
             }
@@ -418,8 +440,8 @@ void SearchNode::refine() {
             CC.sort(&SearchNode::Compare);
             CC.discrete = true;	
             if (CC.size() > 1) {
-                for (size_t ii = 0; ii + 1 < CC.size(); ii++) {
-                    if (Degg[CC[ii]] == Degg[CC[ii + 1]]) {
+                for (size_t i = 0; i + 1 < CC.size(); i++) {
+                    if (Degg[CC[i]] == Degg[CC[i + 1]]) {
                         CC.discrete = false;
                         break;
                     }		
@@ -427,32 +449,28 @@ void SearchNode::refine() {
             }
             // if this cell splits into one-cells, add them to F
             if (CC.discrete) {
-                for (size_t ii = 0; ii < CC.size(); ii++) {
-                    F[NFixed++] = CC[ii];
+                for (size_t i = 0; i < CC.size(); i++) {
+                    F[NFixed++] = CC[i];
                 }
                 continue;
             }
 
             // if there is still one cell
             if (Degg[CC[0]] == Degg[CC[CC.size() - 1]]) {
-                PP.push_back(CC);
+                PP.push_back(std::move(CC));
                 continue;
             }
 		
             // splitting C into new cells
             int l = 0;
             for (size_t i = 1; i < CC.size(); i++) {
-                if (!(Degg[CC[i]] == Degg[CC[i - 1]])) {
+                if (Degg[CC[i]] != Degg[CC[i - 1]]) {
                     // add a new cell					
-                    Cell CCC(CC, l, i - l);
-                    PP.push_back(CCC);
-                    CCC.clear();
+                    PP.emplace_back(CC, l, i - l);
                     l = i;
                 }
             }
-            Cell CCC(CC, l, CC.size() - l);
-            PP.push_back(CCC);
-            CCC.clear();
+            PP.emplace_back(CC, l, CC.size() - l);
         }
 
         P = PP;
@@ -553,8 +571,8 @@ void SearchNode::stabilise() {
 
         //CellOrbits = new Perm(n);
         const Cell& C = P.front();
-        for (size_t ii = 0; ii < C.size(); ii++) {
-            CellOrbits[C[ii]] = -1;
+        for (size_t i = 0; i < C.size(); i++) {
+            CellOrbits[C[i]] = -1;
         }
         int u;
         size_t jj = 0;
@@ -567,7 +585,7 @@ void SearchNode::stabilise() {
             Cell C1(1);
             C1[0] = u;
 
-            Pu.push_back(C1);
+            Pu.push_back(std::move(C1));
             Cell C2(C.size() - 1);
             for (size_t j = 0; j < jj; j++) {
                 C2[j] = C[j];
@@ -575,7 +593,7 @@ void SearchNode::stabilise() {
             for (size_t j = jj + 1; j < C.size(); j++) {
                 C2[j - 1] = C[j];
             }
-            Pu.push_back(C2);
+            Pu.push_back(std::move(C2));
 					
             //for (int j = 1; j < P.size(); j++)
             auto it = P.begin();
@@ -635,6 +653,10 @@ void StructSet::write(std::string path, bool append) const {
         Structure::writeStruct(Cert(*it));
     }
     Structure::stream.close();
+}
+
+size_t StructSet::size() const {
+    return set.size();
 }
 
 void StructSet::clear() {
