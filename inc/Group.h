@@ -1,5 +1,6 @@
 #pragma once
 #include <cinttypes>
+#include <memory>
 
 #include "Permutation.h"
 
@@ -8,13 +9,8 @@ friend class SearchNode;
 public:
     Group();
     explicit Group(size_t m);
-    Group(const Group& G);
-    Group(Group&& G);
-    Group& operator=(const Group& G);
-    Group& operator=(Group&& G);
     Group operator^(const Perm& P) const;
     Group operator*(const Group& G) const;
-    ~Group();
 
     bool contains(const Perm& P) const;
     void addGen(const Perm& P);
@@ -40,7 +36,7 @@ private:
     Perm Orbit; // orbit of u
     size_t NPoints; // number of points in Orbit	
 
-    Group* Gu; // stabilizer of u;
+    std::shared_ptr<Group> Gu; // stabilizer of u;
 };
 
 Group S(size_t m);

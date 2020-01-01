@@ -110,9 +110,6 @@ bool isomorphic(const Structure& s, const Structure& t) {
 }
 
 void Structure::certify() {
-    if (TopSearchNode) {
-        delete TopSearchNode->G;
-    }
     delete Structure::TopSearchNode;
 
     Structure::TopSearchNode = new SearchNode(n);
@@ -125,7 +122,7 @@ void Structure::certify() {
     Top->BasisOK = 0;
     Top->AutoFound = false;
     Top->LastBaseChange = Top;
-    Top->G = new Group(n);
+    Top->G = std::make_shared<Group>(n);
 
     size_t s = degsize();
     Top->Degg = new Deg[n];
@@ -147,9 +144,6 @@ void Structure::certify() {
 }
 
 Group Structure::aut() {
-    if (TopSearchNode && TopSearchNode->G) {
-        delete (TopSearchNode->G);
-    }
     delete Structure::TopSearchNode;
 
     Structure::TopSearchNode = new SearchNode(n);
@@ -162,7 +156,7 @@ Group Structure::aut() {
     Top->BasisOK = 0;
     Top->AutoFound = false;
     Top->LastBaseChange = Top;
-    Top->G = new Group(n);
+    Top->G = std::make_shared<Group>(n);
 
     size_t s = degsize();
     Top->Degg = new Deg[n];
@@ -179,7 +173,7 @@ Group Structure::aut() {
 
     Top->stabilise();
 	
-    Group* AutoPtr = TopSearchNode->G;
+    std::shared_ptr<Group> AutoPtr = TopSearchNode->G;
 
     delete[] Top->Degg;
     return *AutoPtr;
@@ -261,8 +255,8 @@ void SearchNode::updateOrbits(const Perm& Q) {
 }
 
 void SearchNode::addGen(const Perm& P) {
-    if (G->Gu == nullptr) {
-        G->Gu = new Group(G->n);
+    if (!G->Gu) {
+        G->Gu = std::make_shared<Group>(G->n);
     }
     if (Next != nullptr) {
         Next->G = G->Gu;
@@ -346,12 +340,12 @@ void SearchNode::addGen(const Perm& P) {
 
 void SearchNode::changeBase(int d) {
     SearchNode* node = LastBaseChange;
-    Group* G = node->G;
+    std::shared_ptr<Group> G = node->G;
 
-    if (G == nullptr) {
+    if (!G) {
         return;
     }
-    if (G->Gu == nullptr) {
+    if (!G->Gu) {
         return;
     }
 
@@ -373,7 +367,7 @@ void SearchNode::changeBase(int d) {
     // clearing the stabilizer tower from LastBaseChange
     // it is important not to delete any groups for avoiding memory leak
 
-    Group* GG = G;
+    std::shared_ptr<Group> GG = G;
     while (GG) {
         for (size_t i = 0; i < n; i++) {
             GG->Cosets[i].clear();
@@ -384,7 +378,7 @@ void SearchNode::changeBase(int d) {
 
         GG->u = -1;			
         GG->NPoints = 1;
-        GG = GG->Gu;			
+        GG = GG->Gu;
     }	
 		
     // backwards

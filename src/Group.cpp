@@ -6,63 +6,6 @@ Group::Group() : Group(1) {
 Group::Group(size_t n) : n(n), u(-1), Orbit(n), Cosets(n), Inverses(n), NPoints(1), Gu(nullptr) {
 }
 
-Group::Group(const Group& G) : n(G.n), u(G.u), Orbit(G.Orbit), NPoints(G.NPoints),
-    Generators(G.Generators), Cosets(G.Cosets), Inverses(G.Inverses) {
-    if (G.Gu) {
-        Gu = new Group(*G.Gu);
-    } else {
-        Gu = nullptr;
-    }
-}
-
-Group::Group(Group&& G) : n(G.n), Orbit(std::move(G.Orbit)), NPoints(G.NPoints), u(G.u), 
-    Generators(std::move(G.Generators)), Cosets(std::move(G.Cosets)),
-    Inverses(std::move(G.Inverses)), Gu(G.Gu) {
-    G.Gu = nullptr;
-}
-
-Group& Group::operator=(const Group& G) {
-    if (&G == this) {
-        return *this;
-    }
-    delete Gu;
-
-    n = G.n;
-    Orbit = G.Orbit;
-    NPoints = G.NPoints;	
-    u = G.u;
-    Generators = G.Generators;
-    Cosets = G.Cosets;
-    Inverses = G.Inverses;
-
-    if (G.Gu) {
-        Gu = new Group(*G.Gu);
-    } else {
-        Gu = nullptr;
-    }
-    return *this;
-}
-
-Group& Group::operator=(Group&& G) {
-    delete Gu;
-
-    n = G.n;
-    Orbit = std::move(G.Orbit);
-    NPoints = G.NPoints;	
-    u = G.u;
-    Generators = std::move(G.Generators);
-    Cosets = std::move(G.Cosets);
-    Inverses = std::move(G.Inverses);
-    Gu = G.Gu;
-
-    G.Gu = nullptr;
-    return *this;
-}
-
-Group::~Group() {
-    delete Gu;
-}
-
 Group Group::operator^(const Perm& P) const {
     Group G(n);
     for (const Perm& Q : Generators) {
@@ -115,7 +58,7 @@ bool Group::contains(const Perm& P) const {
 // adding a new generator to the group
 void Group::addGen(const Perm& P) {
     if (Gu == nullptr) {
-        Gu = new Group(n);
+        Gu = std::make_shared<Group>(n);
         u = 0;
         while (P[u] == u) {
             u++;

@@ -77,7 +77,7 @@ public:
 private:
     Part P;
     int FixedPoint;
-    Group* G;
+    std::shared_ptr<Group> G;
     Perm CellOrbits;
     size_t Depth;
     size_t NFixed;
