@@ -35,12 +35,11 @@ private:
     int u; // a fixed element
 
     PermList Generators; // generators of the group
-
+    PermList Cosets; // coset representatives
+    mutable PermList Inverses; // inverses of coset representatives
     Perm Orbit; // orbit of u
     size_t NPoints; // number of points in Orbit	
 
-    Perm* Cosets; // coset representatives
-    Perm* Inverses; // inverses of coset representatives
     Group* Gu; // stabilizer of u;
 };
 

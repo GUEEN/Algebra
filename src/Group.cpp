@@ -3,19 +3,11 @@
 Group::Group() : Group(1) {
 }
 
-Group::Group(size_t n) : n(n), u(-1), Orbit(n), Generators(), NPoints(1), Gu(nullptr) {
-    Cosets = new Perm[n];
-    Inverses = new Perm[n];
+Group::Group(size_t n) : n(n), u(-1), Orbit(n), Cosets(n), Inverses(n), NPoints(1), Gu(nullptr) {
 }
 
-Group::Group(const Group& G) : n(G.n), u(G.u), Orbit(G.Orbit), NPoints(G.NPoints), Generators(G.Generators) {
-    Cosets = new Perm[n];
-    Inverses = new Perm[n];
-    for (size_t i = 1; i < n; ++i)	{
-        Cosets[i] = G.Cosets[i];
-        Inverses[i] = G.Inverses[i];
-    }
-
+Group::Group(const Group& G) : n(G.n), u(G.u), Orbit(G.Orbit), NPoints(G.NPoints),
+    Generators(G.Generators), Cosets(G.Cosets), Inverses(G.Inverses) {
     if (G.Gu) {
         Gu = new Group(*G.Gu);
     } else {
@@ -24,9 +16,8 @@ Group::Group(const Group& G) : n(G.n), u(G.u), Orbit(G.Orbit), NPoints(G.NPoints
 }
 
 Group::Group(Group&& G) : n(G.n), Orbit(std::move(G.Orbit)), NPoints(G.NPoints), u(G.u), 
-    Generators(std::move(G.Generators)), Cosets(G.Cosets), Inverses(G.Inverses), Gu(G.Gu) {
-    G.Cosets = nullptr;
-    G.Inverses = nullptr;
+    Generators(std::move(G.Generators)), Cosets(std::move(G.Cosets)),
+    Inverses(std::move(G.Inverses)), Gu(G.Gu) {
     G.Gu = nullptr;
 }
 
@@ -34,9 +25,6 @@ Group& Group::operator=(const Group& G) {
     if (&G == this) {
         return *this;
     }
-
-    delete[] Cosets;
-    delete[] Inverses;
     delete Gu;
 
     n = G.n;
@@ -44,14 +32,9 @@ Group& Group::operator=(const Group& G) {
     NPoints = G.NPoints;	
     u = G.u;
     Generators = G.Generators;
+    Cosets = G.Cosets;
+    Inverses = G.Inverses;
 
-    Cosets = new Perm[n];
-    Inverses = new Perm[n];
-
-    for (size_t i = 1; i < n; ++i)	{
-        Cosets[i] = G.Cosets[i];
-	Inverses[i] = G.Inverses[i];
-    }
     if (G.Gu) {
         Gu = new Group(*G.Gu);
     } else {
@@ -61,8 +44,6 @@ Group& Group::operator=(const Group& G) {
 }
 
 Group& Group::operator=(Group&& G) {
-    delete[] Cosets;
-    delete[] Inverses;
     delete Gu;
 
     n = G.n;
@@ -70,20 +51,15 @@ Group& Group::operator=(Group&& G) {
     NPoints = G.NPoints;	
     u = G.u;
     Generators = std::move(G.Generators);
-
-    Cosets = G.Cosets;
-    Inverses = G.Inverses;
+    Cosets = std::move(G.Cosets);
+    Inverses = std::move(G.Inverses);
     Gu = G.Gu;
 
-    G.Cosets = nullptr;
-    G.Inverses = nullptr;
     G.Gu = nullptr;
     return *this;
 }
 
 Group::~Group() {
-    delete[] Cosets;
-    delete[] Inverses;
     delete Gu;
 }
 

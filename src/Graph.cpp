@@ -143,8 +143,8 @@ size_t Graph::deg() {
 
 bool Graph::subClique(size_t k) const {
     Perm Q(k);
-    for (size_t ii = 0; ii + k <= n; ii++) {
-        Q[0] = ii;
+    for (size_t i = 0; i + k <= n; i++) {
+        Q[0] = i;
         if (nextS(1, Q)) {
             return true;
         }
@@ -158,15 +158,15 @@ bool Graph::nextS(int level, Perm& Q) const {
     }
 
     if (level < Q.size()) {
-        for (size_t ii = Q[level - 1] + 1; ii < n; ii++) {
+        for (size_t i = Q[level - 1] + 1; i < n; i++) {
             bool B = true;
-            for (size_t jj = 0; jj < level; jj++) {
-                if (edge(Q[jj], ii)) {
+            for (size_t j = 0; j < level; j++) {
+                if (edge(Q[j], i)) {
                     B = false;
                 }
             }
             if (B) {
-                Q[level] = ii;
+                Q[level] = i;
                 if (nextS(level + 1, Q)) {
                     return true;
                 }
@@ -228,10 +228,10 @@ bool readGraph(Graph& G) {
 Graph operator+(const Graph& G, size_t m) {
     size_t n = G.n;
     Graph H(m + n);
-    for (size_t ii = 0; ii < n; ii++) {
-        for (size_t jj = ii + 1; jj < n; jj++) {
-            if (G.edge(ii, jj)) {
-                H.addEdge(ii, jj);
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = i + 1; j < n; j++) {
+            if (G.edge(i, j)) {
+                H.addEdge(i, j);
             }
         }
     }
@@ -241,10 +241,10 @@ Graph operator+(const Graph& G, size_t m) {
 Graph operator+(size_t m, const Graph& G) {
     size_t n = G.n;
     Graph H(m + n);
-    for (size_t ii = 0; ii < n; ii++) {
-        for (size_t jj = ii + 1; jj < n; jj++) {
-            if (G.edge(ii, jj)) {
-                H.addEdge(ii + m, jj + m);
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = i + 1; j < n; j++) {
+            if (G.edge(i, j)) {
+                H.addEdge(i + m, j + m);
             }
         }
     }

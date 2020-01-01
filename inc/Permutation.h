@@ -51,5 +51,3 @@ Perm Transposition(size_t n, int i, int j);
 Perm Cycle(size_t n);
 
 typedef std::vector<Perm> PermList;
-typedef std::vector<Perm>::iterator PermIt;
-typedef std::vector<Perm>::const_iterator ConstPermIt;
