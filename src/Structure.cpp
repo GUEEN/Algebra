@@ -605,8 +605,8 @@ Finish:
     }
 }
 
-void StructSet::add(const Certificate& cert) {
-    set.insert(CertToString(cert));
+void StructSet::add(const Structure& s) {
+    set.insert(CertToString(s.cert));
 }
 
 void StructSet::write(std::string path, bool append) const {
@@ -629,6 +629,6 @@ void StructSet::clear() {
     set.clear();
 }
 
-bool StructSet::contains(const Certificate& cert) const {
-    return set.count(CertToString(cert));
+bool StructSet::contains(const Structure& s) const {
+    return set.count(CertToString(s.cert));
 }

@@ -36,6 +36,7 @@ class SearchNode;
 // graphs, digraphs, hypergraphs, semigroups, posets, lattices
 class Structure {
 friend class SearchNode;
+friend class StructSet;
 public:
     explicit Structure(size_t n);
     size_t size() const;
@@ -101,11 +102,11 @@ private:
 // class modelling an unordered collection of non-isomorphic structures. 
 class StructSet {
 public:
-    void add(const Certificate& cert);
+    void add(const Structure& s);
     size_t size() const;
     void write(std::string path, bool Append = false) const;
     void clear();
-    bool contains(const Certificate& cert) const;
+    bool contains(const Structure& s) const;
 
 private:
     std::unordered_set<std::string> set;
