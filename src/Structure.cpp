@@ -59,7 +59,7 @@ void Structure::writeStructList(std::string path, StructList& List, bool Append)
 	stream.close();
 }*/
 
-Structure::Structure(size_t n): n(n) {
+Structure::Structure(size_t n): n(n), auto_group(nullptr) {
 };
 
 size_t Structure::size() const {
@@ -105,7 +105,7 @@ int compareCertificates(const Certificate& C, const Certificate& D) {
 }
 
 bool isomorphic(const Structure& s, const Structure& t) {
-    int r = compareCertificates(*s.cert, *t.cert);
+    int r = compareCertificates(s.cert, t.cert);
     return r == 0;
 }
 
@@ -139,44 +139,16 @@ void Structure::certify() {
 
     Top->stabilise();
 
-    cert = std::make_shared<Certificate>(getCertificate(Top->B));
+    cert = getCertificate(Top->B);
+    auto_group = Top->G;
     delete[] Top->Degg;
 }
 
 Group Structure::aut() {
-    delete Structure::TopSearchNode;
-
-    Structure::TopSearchNode = new SearchNode(n);
-    SearchNode* Top = Structure::TopSearchNode;	
-
-    Top->B.id(n);	
-    Top->F.id(n);
-    Top->S = this;
-    Top->Bexists = false;
-    Top->BasisOK = 0;
-    Top->AutoFound = false;
-    Top->LastBaseChange = Top;
-    Top->G = std::make_shared<Group>(n);
-
-    size_t s = degsize();
-    Top->Degg = new Deg[n];
-    for (size_t i = 0; i < n; i++) {
-        Top->Degg[i].assign(s, 0);
+    if (!auto_group) {
+        certify();
     }
-
-    Cell C(n);
-
-    Top->P.push_back(C);
-    Top->NFixed = 0;
-    Top->Depth = 0;
-    Top->CellOrbits.id(n);
-
-    Top->stabilise();
-	
-    std::shared_ptr<Group> AutoPtr = TopSearchNode->G;
-
-    delete[] Top->Degg;
-    return *AutoPtr;
+    return *auto_group;
 }
 
 SearchNode::SearchNode(size_t n) : G(nullptr), Next(nullptr), OnBestPath(false), CellOrbits(n) {

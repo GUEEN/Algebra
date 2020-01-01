@@ -56,7 +56,9 @@ protected:
     friend bool isomorphic(const Structure& s, const Structure& t);
 
     size_t n;
-    std::shared_ptr<Certificate> cert;
+    Certificate cert;
+    std::shared_ptr<Group> auto_group;
+
     static SearchNode* TopSearchNode;
 };
 

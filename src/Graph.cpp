@@ -195,7 +195,7 @@ bool readGraph(Graph& G) {
         return false;
     }
 
-    G.cert = std::make_unique<Certificate>(cert);
+    G.cert = cert;
 
     size_t ii = 0;
     size_t jj = 1;
