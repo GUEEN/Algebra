@@ -2,7 +2,7 @@
 
 #include "Graph.h"
 
-// genrating some trees up to isomorphism in a staight-forward way
+// generating some trees up to isomorphism in a staight-forward way
 int main() {
     StructSet Trees;
     Graph T(1);
