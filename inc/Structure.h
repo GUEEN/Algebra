@@ -37,6 +37,7 @@ class SearchNode;
 class Structure {
 friend class SearchNode;
 friend class StructSet;
+friend class Certifier;
 public:
     explicit Structure(size_t n);
     size_t size() const;
@@ -59,23 +60,42 @@ protected:
     size_t n;
     Certificate cert;
     std::shared_ptr<Group> auto_group;
+};
 
-    static SearchNode* TopSearchNode;
+class Certifier {
+friend class Structure;
+friend class SearchNode;
+public:
+    explicit Certifier(const Structure* S);
+private:	
+    Perm F;
+    Perm B;
+    Deg* Degg;
+    const Structure* S;
+    bool AutoFound;
+    bool Bexists;
+    int BasisOK;
+    bool IsDiscrete;
+    SearchNode* Top;
+    SearchNode* LastBaseChange;
+
+    bool Compare(int x, int y);
 };
 
 class SearchNode {
+friend class Certifier;
 friend class Structure;
 public:
-    SearchNode(size_t n);
+    SearchNode(size_t n, Certifier* crt);
     ~SearchNode();
 	
     int orbitRep(size_t v);
     void merge(size_t u, size_t v);
     void updateOrbits(const Perm& Q);
     void addGen(const Perm& Q);
-    inline void refine();
+    void refine();
     void stabilise();
-    inline void changeBase(int d);
+    void changeBase(int d);
 
 private:
     Part P;
@@ -86,17 +106,7 @@ private:
     size_t NFixed;
     bool OnBestPath;
     SearchNode* Next;
-	
-    static Perm F;
-    static Perm B;
-    static Deg* Degg;
-    static const Structure* S;
-    static bool AutoFound;
-    static bool Bexists;
-    static int BasisOK;
-    static bool IsDiscrete;
-    static SearchNode* LastBaseChange;
-    static bool Compare(int x, int y);
+    Certifier* crt;
 };
 
 // class modelling an unordered collection of non-isomorphic structures. 

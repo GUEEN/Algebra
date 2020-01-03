@@ -12,6 +12,7 @@ public:
     size_t deg();
     bool subClique(size_t k) const;
     void resize(size_t m);
+    std::vector<size_t> getDegrees() const;
     void addEdge(size_t i, size_t j);
     void killEdge(size_t i, size_t j);
 

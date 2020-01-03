@@ -47,7 +47,7 @@ protected:
 };
 
 Perm Mult(const Perm& P, const Perm &Q, const Perm& R);
-Perm Transposition(size_t n, int i, int j);
+Perm Transposition(size_t n, size_t i, size_t j);
 Perm Cycle(size_t n);
 
 typedef std::vector<Perm> PermList;

@@ -2,19 +2,7 @@
 
 #include "Structure.h"
 
-Deg* SearchNode::Degg;
-const Structure* SearchNode::S;
-bool SearchNode::IsDiscrete;
-bool SearchNode::AutoFound;
-bool SearchNode::Bexists;
-SearchNode* SearchNode::LastBaseChange;
-SearchNode* Structure::TopSearchNode;
-int SearchNode::BasisOK;
-
 std::fstream Structure::stream;
-
-Perm SearchNode::B;
-Perm SearchNode::F;
 
 Cell::Cell() : Perm(), counted(false), discrete(false) {
 };
@@ -48,16 +36,6 @@ Certificate Cert(const std::string& s) {
     }
     return cert;
 }
-/*
-void Structure::writeStructList(std::string path, StructList& List, bool Append)
-{
-	if (Append)
-		stream.open(path, std::ios::app | std::ios::out | std::ios::binary);
-	else
-		stream.open(path, std::ios::out|std::ios::binary);
-	List.traverse(&Structure::writeStruct);		
-	stream.close();
-}*/
 
 Structure::Structure(size_t n): n(n), auto_group(nullptr) {
 };
@@ -109,25 +87,22 @@ bool isomorphic(const Structure& s, const Structure& t) {
     return r == 0;
 }
 
-void Structure::certify() {
-    delete Structure::TopSearchNode;
+Certifier::Certifier(const Structure* S) : S(S) {
+    size_t n = S->n;
+    Top = new SearchNode(n, this);
+    B.id(n);	
+    F.id(n);
+    Bexists = false;
+    BasisOK = 0;
+    AutoFound = false;
+    LastBaseChange = Top;
 
-    Structure::TopSearchNode = new SearchNode(n);
-    SearchNode* Top = Structure::TopSearchNode;	
-
-    Top->B.id(n);	
-    Top->F.id(n);
-    Top->S = this;
-    Top->Bexists = false;
-    Top->BasisOK = 0;
-    Top->AutoFound = false;
-    Top->LastBaseChange = Top;
     Top->G = std::make_shared<Group>(n);
 
-    size_t s = degsize();
-    Top->Degg = new Deg[n];
+    size_t s = S->degsize();
+    Degg = new Deg[n];
     for (size_t i = 0; i < n; i++) {
-        Top->Degg[i].assign(s, 0);
+        Degg[i].assign(s, 0);
     }
 	
     Cell C(n);
@@ -136,12 +111,15 @@ void Structure::certify() {
     Top->NFixed = 0;
     Top->Depth = 0;
     Top->CellOrbits.id(n);
-
     Top->stabilise();
 
-    cert = getCertificate(Top->B);
-    auto_group = Top->G;
-    delete[] Top->Degg;
+    delete[] Degg;
+}
+
+void Structure::certify() {
+    Certifier certifier(this);
+    cert = getCertificate(certifier.B);
+    auto_group = std::move(certifier.Top->G);
 }
 
 Group Structure::aut() {
@@ -151,7 +129,7 @@ Group Structure::aut() {
     return *auto_group;
 }
 
-SearchNode::SearchNode(size_t n) : G(nullptr), Next(nullptr), OnBestPath(false), CellOrbits(n) {
+SearchNode::SearchNode(size_t n, Certifier* crt) : G(nullptr), Next(nullptr), OnBestPath(false), CellOrbits(n), crt(crt) {
 };
 
 SearchNode::~SearchNode() {
@@ -159,8 +137,8 @@ SearchNode::~SearchNode() {
 };
 
 // comparing for sort. Must return true if node x goes before y
-bool SearchNode::Compare(int x, int y) {
-    size_t s = SearchNode::Degg[x].size();
+bool Certifier::Compare(int x, int y) {
+    size_t s = S->degsize();
     if (Degg[y].size() < s) {
         return false;
     }
@@ -311,7 +289,7 @@ void SearchNode::addGen(const Perm& P) {
 }
 
 void SearchNode::changeBase(int d) {
-    SearchNode* node = LastBaseChange;
+    SearchNode* node = crt->LastBaseChange;
     std::shared_ptr<Group> G = node->G;
 
     if (!G) {
@@ -331,7 +309,7 @@ void SearchNode::changeBase(int d) {
         }		
         node = node->Next;
     }
-    node = LastBaseChange;
+    node = crt->LastBaseChange;
     PermList Geners = G->Generators;
 
     size_t n = G->n;
@@ -355,7 +333,7 @@ void SearchNode::changeBase(int d) {
 		
     // backwards
     for (const Perm& P : Geners) {
-        LastBaseChange->addGen(P);
+        crt->LastBaseChange->addGen(P);
     }
 }
 
@@ -370,8 +348,10 @@ void SearchNode::refine() {
 
     // if not discrete
     bool Stab = false;
-    size_t s = S->degsize();
-    size_t n = S->n;
+    Deg* Degg = crt->Degg;
+
+    size_t s = crt->S->degsize();
+    size_t n = crt->S->n;
 		
     for (size_t i = 0; i < n; i++) {
         Degg[i].assign(s, 0);
@@ -383,7 +363,7 @@ void SearchNode::refine() {
         const Cell& C = *c;		
         for (size_t i = 0; i < C.size(); i++) {			
             for (size_t j = 0; j < n; j++) {
-                int col = S->color(C[i], j);
+                int col = crt->S->color(C[i], j);
                 if (col) {
                     Degg[j][col - 1]++;
                 }
@@ -397,13 +377,13 @@ void SearchNode::refine() {
 	    // first we treat discrete cells by adding them to F array
 	    if (CC.size() == 1 || CC.discrete) { //
                 for (size_t i = 0; i < CC.size(); i++) {
-                    F[NFixed++] = CC[i];
+                    crt->F[NFixed++] = CC[i];
                 }
                 continue;
             }
 
             // if this is a non-discrete cell					
-            CC.sort(&SearchNode::Compare);
+            CC.sort(std::bind(&Certifier::Compare, crt, std::placeholders::_1, std::placeholders::_2));
             CC.discrete = true;	
             if (CC.size() > 1) {
                 for (size_t i = 0; i + 1 < CC.size(); i++) {
@@ -416,7 +396,7 @@ void SearchNode::refine() {
             // if this cell splits into one-cells, add them to F
             if (CC.discrete) {
                 for (size_t i = 0; i < CC.size(); i++) {
-                    F[NFixed++] = CC[i];
+                    crt->F[NFixed++] = CC[i];
                 }
                 continue;
             }
@@ -442,7 +422,7 @@ void SearchNode::refine() {
         P = PP;
         // evaluating wether P is a stable partition
         Stab = true;
-        IsDiscrete = true;
+        crt->IsDiscrete = true;
 
         c = P.begin();
         while (c != P.end()) {
@@ -454,22 +434,22 @@ void SearchNode::refine() {
             }
         }
 
-        IsDiscrete = true;
+        crt->IsDiscrete = true;
         for (auto it = P.begin(); it != P.end(); ++it) {
             if (it->size() > 1 && it->discrete == false) {
-                IsDiscrete = false;
+                crt->IsDiscrete = false;
                 break;
             }
         }
-        if (IsDiscrete) {
+        if (crt->IsDiscrete) {
             Stab = true;
         }
     } while(!Stab);
 
-    IsDiscrete = true;
+    crt->IsDiscrete = true;
     for (auto it = P.begin(); it != P.end(); ++it) {
         if (!it->discrete) {
-            IsDiscrete = false;
+            crt->IsDiscrete = false;
             break;
         }
     }
@@ -481,51 +461,50 @@ void SearchNode::stabilise() {
 
     refine();
     int res = 1;
-    if (Bexists) {
-        res = S->compareOrders(F, B, m, NFixed);
+    if (crt->Bexists) {
+        res = crt->S->compareOrders(crt->F, crt->B, m, NFixed);
     }
 
-    size_t n = S->n;
+    size_t n = crt->S->n;
 
-    if (IsDiscrete) {
-        if (Bexists) {
+    if (crt->IsDiscrete) {
+        if (crt->Bexists) {
             if (res == 0) { // this means that we have afound an automorphism
                 Perm Q(n);
                 for (size_t i = 0; i < n; i++) {
-                    Q[F[i]] = B[i];
+                    Q[crt->F[i]] = crt->B[i];
                 }
-                if (!S->TopSearchNode->G->contains(Q)) {
-                    S->TopSearchNode->addGen(Q);
-                    AutoFound = true;
+                if (!crt->Top->G->contains(Q)) {
+                    crt->Top->addGen(Q);
+                    crt->AutoFound = true;
                 }
             } else if (res == 1) { // if this ordering is better
-                B = F;
-                SearchNode* Node = S->TopSearchNode;
+                crt->B = crt->F;
+                SearchNode* Node = crt->Top;
                 while (Node != nullptr) {
                     Node->OnBestPath = true;
                     Node = Node->Next;
                 }
             }
         } else {
-            B = F;			
-            SearchNode* Node = S->TopSearchNode;
+            crt->B = crt->F;			
+            SearchNode* Node = crt->Top;
             while (Node != nullptr) {
                 Node->OnBestPath = true;
                 Node = Node->Next;
             }
-            Bexists = true;
+            crt->Bexists = true;
         }
         goto Finish;
     } else {
         if (res == 1) {
-            Bexists = false;
+            crt->Bexists = false;
         } else if (res == -1) {
             goto Finish;
         }
         // we get here only if result is 0
         if (Next == nullptr) {
-            Next = new SearchNode(n);
-            Next->S = S;
+            Next = new SearchNode(n, crt);
             Next->Depth = Depth + 1;
             if (G) {
                 Next->G = G->Gu;
@@ -569,25 +548,25 @@ void SearchNode::stabilise() {
                 ++it;
             }
 
-            if (Depth > BasisOK) {
+            if (Depth > crt->BasisOK) {
                 changeBase(Depth);
             }
 
-            Su->P = Pu;
+            Su->P = std::move(Pu);
             Su->NFixed = NFixed;
 
-            BasisOK = Depth;
-            LastBaseChange = this;
+            crt->BasisOK = Depth;
+            crt->LastBaseChange = this;
 
             Next->stabilise();
 
             CellOrbits[orbitRep(u)] -= n;
 
-            if (AutoFound) {
+            if (crt->AutoFound) {
                 if (!OnBestPath) {
                     goto Finish;
                 }
-                AutoFound = false;
+                crt->AutoFound = false;
             }				
             while (jj < C.size() && CellOrbits[orbitRep(C[jj])] < -n) {
                 jj++;
@@ -597,9 +576,9 @@ void SearchNode::stabilise() {
 
 Finish:
     // zero the Degg array 
-    size_t s = S->degsize();
+    size_t s = crt->S->degsize();
     for (size_t i = m; i < NFixed; i++) {
-        Degg[i].assign(s, 0);
+        crt->Degg[i].assign(s, 0);
         FixedPoint = -1;
         P.clear();
     }

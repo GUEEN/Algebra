@@ -2,7 +2,7 @@
 
 #include "Graph.h"
 
-// genrating some trees up to isomorphism in a staight-forward way
+// generating some trees up to isomorphism in a staight-forward way
 int main() {
     StructSet Trees;
     Graph T(1);
@@ -18,10 +18,27 @@ int main() {
         
         ++n;
         StructSet list;
-        for (int i = last; i < next; ++i) {
-            const Graph& T = trees[i];
+        for (size_t index = last; index < next; ++index) {
+            const Graph& T = trees[index];
+            std::vector<size_t> degrees = T.getDegrees();
+            size_t d = n;
+            for (size_t i = 0; i < T.size(); ++i) {
+                if (degrees[i] > 1) {
+                    continue;
+                }
+                size_t j = 0;
+                while (T.edge(i, j) == false) {
+                    ++j;
+                }
+                d = std::min(d, degrees[j]);
+            }
+
             Graph S = T + 1;
-            for (int i = 0; i + 1 < n; ++i) {
+            for (size_t i = 0; i + 1 < n; ++i) {
+                if (degrees[i] > d + 1) {
+                    continue;
+                }
+
                 S.addEdge(i, n - 1);
                 S.certify();
                 if (!list.contains(S)) {
