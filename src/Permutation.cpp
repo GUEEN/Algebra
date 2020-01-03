@@ -220,7 +220,6 @@ Perm Perm::operator+(const Perm& T) const {
 
 Perm Perm::operator+(size_t m) const {
     Perm Q(m);
-    Q.id();
     return *this + Q;
 }
 
@@ -285,7 +284,7 @@ Perm operator!(const Perm& P) {
     return Q;
 }
 
-Perm Transposition(size_t n, int i, int j) {
+Perm Transposition(size_t n, size_t i, size_t j) {
     Perm T(n);
     T.id();
     if (0 <= i && i < n && 0 <= j && j < n) {
@@ -304,13 +303,13 @@ Perm Cycle(size_t n) {
 }
 
 Perm Mult(const Perm& P, const Perm& Q, const Perm& R) {
-    size_t n = R.size();	
+    size_t n = R.size();
     size_t m = Q.size();
     size_t l = P.size();
 
     Perm U(n);
     for (size_t i = 0; i < n; i++) {
-        int k = R[i];				
+        int k = R[i];
         if (k >= 0 && k < m) {
             k = Q[k];
             if (k >= 0 && k < l) {

@@ -1,25 +1,5 @@
 #include "Graph.h"
 
-/*
-Degrees Graph::getDegrees()
-{
-	Degrees D(n);
-
-	for (int i = 0; i < n; i++)
-	{
-		Deg d(1);
-
-		for (int j = 0; j < n; j++)
-		if (A[i,j] == 1)
-			d[0]++;
-
-		D[i] = d;
-	}
-
-	return D;
-}*/
-
-
 Graph::Graph() : Structure(0), e(0) {
 }
 
@@ -34,6 +14,18 @@ void Graph::resize(size_t m) {
     n = m;
     A.assign(m * m, 0);
     e = 0;
+}
+
+std::vector<size_t> Graph::getDegrees() const {
+    std::vector<size_t> degrees(n);
+    for (size_t i = 0; i < n; i++) {
+        for (size_t j = 0; j < n; j++) {
+            if (A[i * n + j]) {
+                degrees[i]++;
+            }
+        }
+    }
+    return degrees;
 }
 
 void Graph::addEdge(size_t i, size_t j) {
