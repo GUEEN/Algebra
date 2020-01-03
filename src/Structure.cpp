@@ -552,7 +552,7 @@ void SearchNode::stabilise() {
                 changeBase(Depth);
             }
 
-            Su->P = Pu;
+            Su->P = std::move(Pu);
             Su->NFixed = NFixed;
 
             crt->BasisOK = Depth;
