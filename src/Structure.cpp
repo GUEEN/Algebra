@@ -2,8 +2,6 @@
 
 #include "Structure.h"
 
-std::fstream Structure::stream;
-
 Cell::Cell() : Perm(), counted(false), discrete(false) {
 };
 
@@ -40,19 +38,19 @@ Certificate Cert(const std::string& s) {
 Structure::Structure(size_t n): n(n), auto_group(nullptr) {
 };
 
+Structure::Structure(size_t n, const Certificate& cert): n(n), 
+    cert(cert), auto_group(nullptr) {
+};
+
 size_t Structure::size() const {
     return n;
 }
 
-void Structure::setReadStream(const std::string& path) {
-    stream.open(path, std::ios::in|std::ios::binary);
-}
-
-void Structure::writeStruct(const Certificate& cert) {
+void Structure::writeStruct(std::fstream& stream, const Certificate& cert) {
     stream.write((char*)cert.data(), cert.size());
 }
 
-void Structure::readStruct(Certificate& cert) {
+void Structure::readStruct(std::fstream& stream, Certificate& cert) {
     stream.read((char*)cert.data(), cert.size());
 }
 
@@ -83,11 +81,14 @@ int compareCertificates(const Certificate& C, const Certificate& D) {
 }
 
 bool isomorphic(const Structure& s, const Structure& t) {
-    int r = compareCertificates(s.cert, t.cert);
-    return r == 0;
+    if (s.n != t.n) {
+        return false;
+    }
+
+    return 0 == compareCertificates(s.cert, t.cert);
 }
 
-Certifier::Certifier(const Structure* S) : S(S) {
+Certifier::Certifier(const Structure* S) : S(S), degrees(S->n) {
     size_t n = S->n;
     Top = new SearchNode(n, this);
     B.id(n);	
@@ -100,9 +101,8 @@ Certifier::Certifier(const Structure* S) : S(S) {
     Top->G = std::make_shared<Group>(n);
 
     size_t s = S->degsize();
-    Degg = new Deg[n];
     for (size_t i = 0; i < n; i++) {
-        Degg[i].assign(s, 0);
+        degrees[i].assign(s, 0);
     }
 	
     Cell C(n);
@@ -112,14 +112,17 @@ Certifier::Certifier(const Structure* S) : S(S) {
     Top->Depth = 0;
     Top->CellOrbits.id(n);
     Top->stabilise();
-
-    delete[] Degg;
 }
 
-void Structure::certify() {
+Certifier::~Certifier() {
+    delete Top;
+}
+
+Structure& Structure::certify() {
     Certifier certifier(this);
     cert = getCertificate(certifier.B);
     auto_group = std::move(certifier.Top->G);
+    return *this;
 }
 
 Group Structure::aut() {
@@ -139,15 +142,15 @@ SearchNode::~SearchNode() {
 // comparing for sort. Must return true if node x goes before y
 bool Certifier::Compare(int x, int y) {
     size_t s = S->degsize();
-    if (Degg[y].size() < s) {
+    if (degrees[y].size() < s) {
         return false;
     }
-    if (Degg[y].size() > s) {
+    if (degrees[y].size() > s) {
         return true;
     }
 
     size_t i = 0;
-    while (i < s && Degg[x][i] == Degg[y][i]) {
+    while (i < s && degrees[x][i] == degrees[y][i]) {
         i++;
     }
 
@@ -155,7 +158,7 @@ bool Certifier::Compare(int x, int y) {
         return false;
     }
 
-    if (Degg[x][i] < Degg[y][i]) {
+    if (degrees[x][i] < degrees[y][i]) {
         return true;
     }
     return false;
@@ -348,13 +351,13 @@ void SearchNode::refine() {
 
     // if not discrete
     bool Stab = false;
-    Deg* Degg = crt->Degg;
+    std::vector<Degree>& degrees = crt->degrees;
 
     size_t s = crt->S->degsize();
     size_t n = crt->S->n;
 		
     for (size_t i = 0; i < n; i++) {
-        Degg[i].assign(s, 0);
+        degrees[i].assign(s, 0);
     }
 		
     auto c = P.begin();	
@@ -365,7 +368,7 @@ void SearchNode::refine() {
             for (size_t j = 0; j < n; j++) {
                 int col = crt->S->color(C[i], j);
                 if (col) {
-                    Degg[j][col - 1]++;
+                    degrees[j][col - 1]++;
                 }
             }
         }
@@ -387,7 +390,7 @@ void SearchNode::refine() {
             CC.discrete = true;	
             if (CC.size() > 1) {
                 for (size_t i = 0; i + 1 < CC.size(); i++) {
-                    if (Degg[CC[i]] == Degg[CC[i + 1]]) {
+                    if (degrees[CC[i]] == degrees[CC[i + 1]]) {
                         CC.discrete = false;
                         break;
                     }		
@@ -402,7 +405,7 @@ void SearchNode::refine() {
             }
 
             // if there is still one cell
-            if (Degg[CC[0]] == Degg[CC[CC.size() - 1]]) {
+            if (degrees[CC[0]] == degrees[CC[CC.size() - 1]]) {
                 PP.push_back(std::move(CC));
                 continue;
             }
@@ -410,7 +413,7 @@ void SearchNode::refine() {
             // splitting C into new cells
             int l = 0;
             for (size_t i = 1; i < CC.size(); i++) {
-                if (Degg[CC[i]] != Degg[CC[i - 1]]) {
+                if (degrees[CC[i]] != degrees[CC[i - 1]]) {
                     // add a new cell					
                     PP.emplace_back(CC, l, i - l);
                     l = i;
@@ -575,39 +578,40 @@ void SearchNode::stabilise() {
     }
 
 Finish:
-    // zero the Degg array 
+    // zero the degrees array 
     size_t s = crt->S->degsize();
     for (size_t i = m; i < NFixed; i++) {
-        crt->Degg[i].assign(s, 0);
+        crt->degrees[i].assign(s, 0);
         FixedPoint = -1;
         P.clear();
     }
 }
 
-void StructSet::add(const Structure& s) {
-    set.insert(CertToString(s.cert));
+void StructSet::insert(const Structure& s) {
+    data_.insert(CertToString(s.cert));
 }
 
-void StructSet::write(std::string path, bool append) const {
+void StructSet::write(const std::string& path, bool append) const {
+    std::fstream stream;
     if (append) {
-        Structure::stream.open(path, std::ios::app | std::ios::out | std::ios::binary);
+        stream.open(path, std::ios::app | std::ios::out | std::ios::binary);
     } else {
-        Structure::stream.open(path, std::ios::out | std::ios::binary);
+        stream.open(path, std::ios::out | std::ios::binary);
     }
-    for (auto it = set.begin(); it != set.end(); it++) {
-        Structure::writeStruct(Cert(*it));
+    for (auto it = data_.begin(); it != data_.end(); it++) {
+        Structure::writeStruct(stream, Cert(*it));
     }
-    Structure::stream.close();
+    stream.close();
 }
 
 size_t StructSet::size() const {
-    return set.size();
+    return data_.size();
 }
 
 void StructSet::clear() {
-    set.clear();
+    data_.clear();
 }
 
 bool StructSet::contains(const Structure& s) const {
-    return set.count(CertToString(s.cert));
+    return data_.count(CertToString(s.cert));
 }

@@ -6,6 +6,40 @@ Graph::Graph() : Structure(0), e(0) {
 Graph::Graph(size_t n) : Structure(n), A(n * n, 0), e(0) {
 }
 
+Graph::Graph(size_t n, const Certificate& cert) : Structure(n, cert), A(n * n, 0), e(0) {
+    size_t l = n * (n - 1) / 2;
+    if (l % 8 == 0) {
+        l >>= 3;
+    } else {
+        l >>= 3;
+        l++;
+    }
+    // cert must be of length l
+    size_t ii = 0;
+    size_t jj = 1;
+	
+    for (size_t i = 0; i < l; i++) {
+        byte b = static_cast<byte>(cert[i]);
+        for (int j = 7; j >= 0; j--) {
+            byte c = (b >> j) & 1;
+
+            if (c) {                
+                addEdge(ii, jj);
+            }
+
+            jj++;
+
+            if (jj >= n) {
+                ii++;
+                jj = ii + 1;
+            }
+	    if (ii >= n - 1) {
+		return;
+            }
+        }
+    }
+}
+
 bool Graph::edge(size_t i, size_t j) const {
     return A[n * i + j] != 0;
 }
@@ -80,6 +114,9 @@ Certificate Graph::getCertificate(const Perm& P) const {
     } else {
         l >>= 3;
         l++;
+    }
+    if (l == 0) {
+        l = 1;
     }
 
     Certificate C(l);
@@ -168,7 +205,7 @@ bool Graph::nextS(int level, Perm& Q) const {
     return false;
 }
 
-bool readGraph(Graph& G) {
+bool readGraph(std::fstream& stream, Graph& G) {
     size_t n = G.size();
     size_t l = n * (n - 1) / 2;
     if (l % 8 == 0) {
@@ -177,43 +214,18 @@ bool readGraph(Graph& G) {
         l >>= 3;
         l++;
     }
+    if (l == 0) {
+        l = 1;
+    }
 
-    G.resize(n);
     Certificate cert(l);
+    Structure::readStruct(stream, cert);
 
-    Structure::readStruct(cert);
-
-    if (G.stream.eof()) {
+    if (stream.eof()) {
         return false;
     }
 
-    G.cert = cert;
-
-    size_t ii = 0;
-    size_t jj = 1;
-	
-    for (size_t i = 0; i < l; i++) {
-        unsigned char b = static_cast<unsigned char>(cert[i]);
-        for (int j = 7; j >= 0; j--) {
-            byte c = (b >> j) % 2;
-            //byte c = (cert[i] >> j) % 2;
-            //std::cout << c << std::endl;
-
-            if (c != 0) {
-                G.addEdge(ii, jj);
-            }
-
-            jj++;
-
-            if (jj >= n) {
-                ii++;
-                jj = ii + 1;
-            }
-            if (ii + 1 >= n) {
-                return true;
-            }
-        }
-    }
+    G = Graph(n, cert);
     return true;
 }
 

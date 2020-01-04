@@ -11,7 +11,7 @@
 #include "Group.h"
 
 typedef uint8_t byte;
-typedef std::vector<int> Deg;
+typedef std::vector<int> Degree;
 typedef std::vector<byte> Certificate;
 
 std::string CertToString(const Certificate& cert);
@@ -40,14 +40,13 @@ friend class StructSet;
 friend class Certifier;
 public:
     explicit Structure(size_t n);
+    Structure(size_t n, const Certificate& cert);
     size_t size() const;
-    void certify();
+    Structure& certify();
     Group aut();
 
-    static std::fstream stream;	
-    static void writeStruct(const Certificate& cert);
-    static void readStruct(Certificate& cert);
-    static void setReadStream(const std::string& path);
+    static void writeStruct(std::fstream&, const Certificate& cert);
+    static void readStruct(std::fstream&, Certificate& cert);
 
 protected:
     virtual int compareOrders(const Perm& P, const Perm& Q, size_t p, size_t q) const = 0;
@@ -67,10 +66,12 @@ friend class Structure;
 friend class SearchNode;
 public:
     explicit Certifier(const Structure* S);
+    ~Certifier();
+
 private:	
     Perm F;
     Perm B;
-    Deg* Degg;
+    std::vector<Degree> degrees;
     const Structure* S;
     bool AutoFound;
     bool Bexists;
@@ -112,12 +113,12 @@ private:
 // class modelling an unordered collection of non-isomorphic structures. 
 class StructSet {
 public:
-    void add(const Structure& s);
+    void insert(const Structure& s);
     size_t size() const;
-    void write(std::string path, bool Append = false) const;
+    void write(const std::string& path, bool Append = false) const;
     void clear();
     bool contains(const Structure& s) const;
 
-private:
-    std::unordered_set<std::string> set;
+protected:
+    std::unordered_set<std::string> data_;
 };
