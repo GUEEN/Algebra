@@ -14,6 +14,22 @@ public:
     ConeGenerator(const Graph& H) : H(H), n(H.size()) {
     }
 
+    std::vector<std::vector<size_t>> getConesK3(int deg) {
+        d = deg;
+        cones.clear();
+        cone.assign(d, 0);
+        if (d == 0) {
+            return cones;
+        }
+
+        F = H;		
+        for (size_t i = 0; i + d <= n; i++) {
+            cone[0] = i;
+            next(1);
+        }
+        return std::move(cones);
+    }
+
     std::vector<std::vector<size_t>> getConesC4(int deg) {
         d = deg;
         cones.clear();
@@ -136,7 +152,12 @@ int main(int argc, char** argv) {
                         Graph G = H + 1;
                         if (d > 0) {
                             ConeGenerator cg(H);
-                            auto cones = cg.getConesC4(d);
+                            std::vector<std::vector<size_t>> cones;
+                            if (graph_name == "C4") {
+                                cones = cg.getConesC4(d);
+                            } else {
+                                cones = cg.getConesK3(d);
+                            }
                             for (const auto& cone : cones) {
                                 for (int j = 0; j < d; j++) {
                                     G.addEdge(cone[j], n - 1);
