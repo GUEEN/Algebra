@@ -9,63 +9,72 @@
 
 #include "Graph.h"
 
-std::vector<size_t> clique;
-std::list<std::vector<size_t>> cliques;
-
-int n;
-int d;
-
-Graph G1;
-
-void next(size_t l) {
-    if (l == d) {
-        cliques.push_back(clique);
-        return;
+class ConeGenerator {
+public:
+    ConeGenerator(const Graph& H) : H(H), n(H.size()) {
     }
 
-    for (size_t i = clique[l - 1] + 1; i + d <= G1.size() + l; i++) {
-        bool B = true;	
-        // trianglefree check		
-        for (size_t j = 0; j < l; j++ ) {
-            if (G1.edge(i, clique[j])) {
-                B = false;
-                break;
-            }
+    std::vector<std::vector<size_t>> getConesC4(int deg) {
+        d = deg;
+        cones.clear();
+        cone.assign(d, 0);
+        if (d == 0) {
+            return cones;
         }
 
-        // K4-free check
-        if (!B) {
-            continue;
-        }
+        F.resize(H.size());
 
-        clique[l] = i;
-        next(l + 1);
-    }
-}
-
-void getCliquesC4(const Graph& H) {
-    clique.assign(d, 0);
-    if (d == 0) {
-        return;
-    }
-
-    G1.resize(H.size());
-
-    for (size_t i = 0; i < H.size(); i++) {
-        for (size_t j = i + 1; j < H.size(); j++) {
-            for (size_t k = 0; k < H.size(); k++) {
-                if (H.edge(i, k) && H.edge(k, j)) {
-                    G1.addEdge(i,j);
+        for (size_t i = 0; i < n; i++) {
+            for (size_t j = i + 1; j < n; j++) {
+                for (size_t k = 0; k < n; k++) {
+                    if (H.edge(i, k) && H.edge(k, j)) {
+                        F.addEdge(i,j);
+                    }
                 }
             }
         }
-    }
 		
-    for (size_t i = 0; i + d <= G1.size(); i++) {
-        clique[0] = i;
-        next(1);
+        for (size_t i = 0; i + d <= n; i++) {
+            cone[0] = i;
+            next(1);
+        }
+        return std::move(cones);
     }
-}
+
+private:
+    void next(size_t l) {
+        if (l == d) {
+            cones.push_back(cone);
+            return;
+        }
+
+        for (size_t i = cone[l - 1] + 1; i + d <= n + l; i++) {
+            bool B = true;	
+            // trianglefree check		
+            for (size_t j = 0; j < l; j++ ) {
+                if (F.edge(i, cone[j])) {
+                    B = false;
+                    break;
+                }
+            }
+
+            // K4-free check
+            if (!B) {
+                continue;
+            }
+
+            cone[l] = i;
+            next(l + 1);
+        }
+    }
+
+    const Graph& H;
+    int d;
+    int n;
+    std::vector<size_t> cone;
+    std::vector<std::vector<size_t>> cones;
+    Graph F;
+};
 
 
 int main(int argc, char** argv) {
@@ -98,68 +107,68 @@ int main(int argc, char** argv) {
     std::string filename = address + "R(" + graph_name + "," + std::to_string(k) +";1,0,0).gr";
     one.write(filename);
 
-    // count for all R(G, n)-graphs
+    // count of all R(G, n)-graphs
     size_t all = 1;
-    // counts for all R(G, n)-graphs by number of vertices
+    // counts of all R(G, n)-graphs by number of vertices
     std::vector<size_t> qv = {0, 1};
+    // counts of all R(G, n)-graphs by number of vertices and edges
     std::vector<std::vector<size_t>> qve = { {}, {1} };
 	
     // proceed to construct larger Ramsey graphs from smaller ones
-    for (n = 2;; n++) {
+    for (int n = 2;; n++) {
         size_t q = 0;
         std::vector<size_t> qe;
-        for (size_t e = 0; e <= n * (n - 1) / 2; e++) {
-            for (d = 0; d <= n && d <= e; d++) {
+        for (int e = 0; e <= n * (n - 1) / 2; e++) {
+            size_t qqe = 0;
+            for (int d = 0; d <= n && d <= e; d++) {
 		GraphSet graphs(n);
-                for (int dd = d - 1; dd <= n - 1; dd++) {
-                    if (dd == -1) {
-                        continue;
-                    }
-
+                for (int dd = std::max(d - 1, 0); dd <= n - 1; dd++) {
                     std::string filename = address + "R(" + graph_name + "," + std::to_string(k) + ";" +
                                            std::to_string(n - 1) + "," + std::to_string(e - d) + "," + std::to_string(dd) + ").gr";
                     std::fstream stream;
                     stream.open(filename, std::ios::in | std::ios::binary);
-
-                    if (stream.good()) {
-                        Graph H(n - 1);
-                        while (readGraph(stream, H)) {
-                            Graph G = H + 1;
-                            if (d > 0) {
-                                cliques.clear();
-                                getCliquesC4(H);
-
-                                for (const std::vector<size_t>& clique : cliques) {
-                                    for (size_t j = 0; j < d; j++) {
-                                        G.addEdge(clique[j], n - 1);
-                                    }
-                                    if (G.deg() == d) {
-                                        if (!G.subClique(k)) {
-                                            graphs.insert(G.certify());
-                                        }
-                                    }
-                                    for (size_t j = 0; j < d; j++) {
-                                         G.killEdge(clique[j], n - 1);
-                                    }
-                                }
-                            } else {
-                                if (G.subClique(k)) {
-                                    continue;
-                                }
-                                graphs.insert(G.certify());
-                            }
-                        }                        
+                    if (!stream.good()) {
+                        continue;
                     }
-                    stream.close();
+                        
+                    Graph H(n - 1);
+                    while (readGraph(stream, H)) {
+                        Graph G = H + 1;
+                        if (d > 0) {
+                            ConeGenerator cg(H);
+                            auto cones = cg.getConesC4(d);
+                            for (const auto& cone : cones) {
+                                for (int j = 0; j < d; j++) {
+                                    G.addEdge(cone[j], n - 1);
+                                }
+                                if (G.deg() == d) {
+                                    if (!G.subClique(k)) {
+                                        graphs.insert(G.certify());
+                                    }
+                                }
+                                for (size_t j = 0; j < d; j++) {
+                                    G.killEdge(cone[j], n - 1);
+                                }
+                            }
+                        } else {
+                            if (G.subClique(k)) {
+                                continue;
+                            }
+                            graphs.insert(G.certify());
+                        }
+                    }
                 }
                 if (graphs.size()) {
                     q += graphs.size();
+                    qqe += graphs.size();
                     all += graphs.size();
 
-                    std::string path = address + "R(" + graph_name + "," + std::to_string(k) + ";" + std::to_string(n) + "," + std::to_string(e) + "," + std::to_string(d) + ").gr";
+                    std::string path = address + "R(" + graph_name + "," + std::to_string(k) + ";" + std::to_string(n) 
+                                     + "," + std::to_string(e) + "," + std::to_string(d) + ").gr";
                     graphs.write(path);
                 }
             }
+            qe.push_back(qqe);
         }
         if (q == 0) {
             break;
