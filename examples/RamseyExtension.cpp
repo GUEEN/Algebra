@@ -1,7 +1,7 @@
 // build and write to disk all Ramsey R(G,k) graphs 
 // by the one-vertex extension algorithm.
-// Here we assume that G is K_3 or C_4 only.
-
+// Here we assume that G is K_3, K_4, C_4 or C_5 only.
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -9,12 +9,14 @@
 
 #include "Graph.h"
 
+const std::vector<std::string> names = {"K3", "K4", "C3", "C4", "C5", "3", "4"};
+
 class ConeGenerator {
 public:
     ConeGenerator(const Graph& H) : H(H), n(H.size()) {
     }
 
-    std::vector<std::vector<size_t>> getConesK3(int deg) {
+    std::vector<std::vector<size_t>> getConesK3(size_t deg) {
         d = deg;
         cones.clear();
         cone.assign(d, 0);
@@ -25,12 +27,28 @@ public:
         F = H;		
         for (size_t i = 0; i + d <= n; i++) {
             cone[0] = i;
-            next(1);
+            next3(1);
         }
         return std::move(cones);
     }
 
-    std::vector<std::vector<size_t>> getConesC4(int deg) {
+    std::vector<std::vector<size_t>> getConesK4(size_t deg) {
+        d = deg;
+        cones.clear();
+        cone.assign(d, 0);
+        if (d == 0) {
+            return cones;
+        }
+
+        F = H;		
+        for (size_t i = 0; i + d <= n; i++) {
+            cone[0] = i;
+            next4(1);
+        }
+        return std::move(cones);
+    }
+
+    std::vector<std::vector<size_t>> getConesC4(size_t deg) {
         d = deg;
         cones.clear();
         cone.assign(d, 0);
@@ -44,7 +62,7 @@ public:
             for (size_t j = i + 1; j < n; j++) {
                 for (size_t k = 0; k < n; k++) {
                     if (H.edge(i, k) && H.edge(k, j)) {
-                        F.addEdge(i,j);
+                        F.addEdge(i, j);
                     }
                 }
             }
@@ -52,13 +70,45 @@ public:
 		
         for (size_t i = 0; i + d <= n; i++) {
             cone[0] = i;
-            next(1);
+            next3(1);
+        }
+        return std::move(cones);
+    }
+
+    std::vector<std::vector<size_t>> getConesC5(size_t deg) {
+        d = deg;
+        cones.clear();
+        cone.assign(d, 0);
+        if (d == 0) {
+            return cones;
+        }
+
+        F.resize(H.size());
+        // looking for path i -- k -- l -- j
+        for (size_t i = 0; i < n; i++) {
+            for (size_t j = i + 1; j < n; j++) {
+                for (size_t k = 0; k < n; k++) {
+                    if (!H.edge(i, k) || k == j) {
+                        continue;
+                    }
+                    for (size_t l = 0; l < n; l++) {
+                        if (H.edge(k, l) && H.edge(l, j) && l != i) {
+                            F.addEdge(i, j);
+                        }
+                    }
+                }
+            }
+        }
+		
+        for (size_t i = 0; i + d <= n; i++) {
+            cone[0] = i;
+            next3(1);
         }
         return std::move(cones);
     }
 
 private:
-    void next(size_t l) {
+    void next3(size_t l) {
         if (l == d) {
             cones.push_back(cone);
             return;
@@ -74,19 +124,48 @@ private:
                 }
             }
 
-            // K4-free check
             if (!B) {
                 continue;
             }
 
             cone[l] = i;
-            next(l + 1);
+            next3(l + 1);
+        }
+    }
+
+    void next4(size_t l) {
+        if (l == d) {
+            cones.push_back(cone);
+            return;
+        }
+
+        for (size_t i = cone[l - 1] + 1; i + d <= n + l; i++) {
+            bool B = true;	
+            // K4-free check		
+            for (size_t j = 0; j < l; j++ ) {
+                for (size_t k = j + 1; k < l; ++k) {
+                    if (F.edge(i, cone[j]) && F.edge(i, cone[k]) && F.edge(cone[j], cone[k])) {
+                        B = false;
+                        break;
+                    }
+                }
+                if (!B) {
+                    break;
+                }
+            }
+
+            if (!B) {
+                continue;
+            }
+
+            cone[l] = i;
+            next4(l + 1);
         }
     }
 
     const Graph& H;
-    int d;
-    int n;
+    size_t d;
+    size_t n;
     std::vector<size_t> cone;
     std::vector<std::vector<size_t>> cones;
     Graph F;
@@ -94,8 +173,6 @@ private:
 
 
 int main(int argc, char** argv) {
-    // producing all R(3,k)-graphs 
-    // producing all R(C4,k)-graphs
     if (argc != 3) {
         std::cout << "Wrong number of arguments. We expact graph name G and positive integer n to compute set R(G, n)" << std::endl;
         return 1;
@@ -104,12 +181,15 @@ int main(int argc, char** argv) {
     std::string graph_name = argv[1];
     size_t k = std::atoi(argv[2]);
 
-    if (graph_name != "K3" && graph_name != "C4") {
-        std::cout << "Wrong graph name. We expect G to be K3 or C4 so far" << std::endl;
+    if (std::find(names.begin(), names.end(), graph_name) == names.end()) {
+        std::cout << "Wrong graph name. We expect G to be K3, K4, C4 or C5 so far" << std::endl;
         return 1;       
     }
-    if (graph_name == "K3") {
+    if (graph_name == "K3" || graph_name == "C3") {
         graph_name = "3";
+    }
+    if (graph_name == "K4") {
+        graph_name = "4";
     }
    
     mkdir("../data/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -155,11 +235,15 @@ int main(int argc, char** argv) {
                             std::vector<std::vector<size_t>> cones;
                             if (graph_name == "C4") {
                                 cones = cg.getConesC4(d);
+                            } else if (graph_name == "C5") {
+                                cones = cg.getConesC5(d);
+                            } else if (graph_name == "4"){
+                                cones = cg.getConesK4(d);
                             } else {
                                 cones = cg.getConesK3(d);
                             }
                             for (const auto& cone : cones) {
-                                for (int j = 0; j < d; j++) {
+                                for (size_t j = 0; j < d; j++) {
                                     G.addEdge(cone[j], n - 1);
                                 }
                                 if (G.deg() == d) {
