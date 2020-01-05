@@ -207,15 +207,17 @@ int main(int argc, char** argv) {
     size_t all = 1;
     // counts of all R(G, n)-graphs by number of vertices
     std::vector<size_t> qv = {0, 1};
+    // counts of all R(G, n)-graphs by number of edges
+    std::vector<size_t> qe = {1};
     // counts of all R(G, n)-graphs by number of vertices and edges
     std::vector<std::vector<size_t>> qve = { {}, {1} };
 	
     // proceed to construct larger Ramsey graphs from smaller ones
     for (int n = 2;; n++) {
         size_t q = 0;
-        std::vector<size_t> qe;
+        std::vector<size_t> ve;
         for (int e = 0; e <= n * (n - 1) / 2; e++) {
-            size_t qqe = 0;
+            size_t qed = 0;
             for (int d = 0; d <= n && d <= e; d++) {
 		GraphSet graphs(n);
                 for (int dd = std::max(d - 1, 0); dd <= n - 1; dd++) {
@@ -264,30 +266,85 @@ int main(int argc, char** argv) {
                     }
                 }
                 if (graphs.size()) {
-                    q += graphs.size();
-                    qqe += graphs.size();
-                    all += graphs.size();
+                    if (e == qe.size()) {
+                        qe.push_back(0);
+                    }
+
+                    qe[e] += graphs.size();
+                    qed += graphs.size();
 
                     std::string path = address + "R(" + graph_name + "," + std::to_string(k) + ";" + std::to_string(n) 
                                      + "," + std::to_string(e) + "," + std::to_string(d) + ").gr";
                     graphs.write(path);
                 }
             }
-            qe.push_back(qqe);
+            ve.push_back(qed);
+            q += qed;
         }
         if (q == 0) {
             break;
         }
         qv.push_back(q);
-        qve.push_back(std::move(qe));
-
-        std::cout << n << " --- " << qv[n] << std::endl;
+        all += q;
+        qve.push_back(std::move(ve));
     }
 
     // writing output
+    auto lspace = [](size_t l, std::string s)->std::string {
+        if (s.length() < l) {
+            return std::string(l - s.length(), ' ') + s;
+        } else {
+            return s;
+        }
+    };
+    auto rspace = [](size_t l, std::string s)->std::string {
+        if (s.length() < l) {
+            return s + std::string(l - s.length(), ' ');
+        } else {
+            return s;
+        }
+    };
 
-    std::cout << "--------------------------------------------------" << std::endl;
-    std::cout << all << std::endl;
+    std::string title = "R(" + graph_name + "," + std::to_string(k) + ")";
+    std::string first_line = title;
+    std::string last_line = lspace(title.length(), "");
+    first_line.push_back('|');
+    last_line.push_back('|');
+    for (size_t i = 1; i < qv.size(); ++i) {
+        size_t l = std::to_string(qv[i]).length() + 1;
+        first_line += lspace(l, std::to_string(i));
+        last_line += lspace(l, std::to_string(qv[i]));
+    }
+    first_line.push_back('|');
+    last_line.push_back('|');
+    first_line += rspace(std::to_string(all).length(), "");
+    last_line += std::to_string(all);
+    std::string hor_line(last_line.length(), '-');
+    hor_line[title.length()] = '+';
+    hor_line[last_line.size() - std::to_string(all).length() - 1] = '+';
 
+    std::cout << first_line << std::endl;
+    std::cout << hor_line << std::endl;
+    for (size_t j = 0; j < qe.size(); ++j) {
+        std::string line = lspace(title.length(), "");
+        line.push_back('|');
+        for (size_t i = 1; i < qv.size(); ++i) {
+            size_t l = std::to_string(qv[i]).length() + 1;
+            size_t q = 0;
+            if (j < qve[i].size()) {
+                q = qve[i][j];
+            }
+            if (q) {
+                line += lspace(l, std::to_string(q));
+            } else {
+                line += lspace(l, "");
+            }
+        }
+        line.push_back('|');
+        line += rspace(std::to_string(all).length(), std::to_string(qe[j]));
+        std::cout << line << std::endl;
+    }
+    std::cout << hor_line << std::endl;
+    std::cout << last_line << std::endl;
     return 0;
 }
