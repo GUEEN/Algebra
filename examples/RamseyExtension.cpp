@@ -266,7 +266,7 @@ int main(int argc, char** argv) {
                     }
                 }
                 if (graphs.size()) {
-                    if (e == qe.size()) {
+                    while (qe.size() <= e) {
                         qe.push_back(0);
                     }
 
@@ -326,7 +326,7 @@ int main(int argc, char** argv) {
     std::cout << first_line << std::endl;
     std::cout << hor_line << std::endl;
     for (size_t j = 0; j < qe.size(); ++j) {
-        std::string line = lspace(title.length(), "");
+        std::string line = lspace(title.length(), std::to_string(j));
         line.push_back('|');
         for (size_t i = 1; i < qv.size(); ++i) {
             size_t l = std::to_string(qv[i]).length() + 1;
