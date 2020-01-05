@@ -311,7 +311,7 @@ int main(int argc, char** argv) {
     first_line.push_back('|');
     last_line.push_back('|');
     for (size_t i = 1; i < qv.size(); ++i) {
-        size_t l = std::to_string(qv[i]).length() + 1;
+        size_t l = std::max(std::to_string(qv[i]).length(), std::to_string(i).length()) + 1;
         first_line += lspace(l, std::to_string(i));
         last_line += lspace(l, std::to_string(qv[i]));
     }
@@ -329,7 +329,7 @@ int main(int argc, char** argv) {
         std::string line = lspace(title.length(), std::to_string(j));
         line.push_back('|');
         for (size_t i = 1; i < qv.size(); ++i) {
-            size_t l = std::to_string(qv[i]).length() + 1;
+            size_t l = std::max(std::to_string(qv[i]).length(), std::to_string(i).length()) + 1;
             size_t q = 0;
             if (j < qve[i].size()) {
                 q = qve[i][j];
