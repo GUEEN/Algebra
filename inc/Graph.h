@@ -22,6 +22,7 @@ public:
     friend Graph operator+(const Graph& G, size_t m);
     friend Graph operator+(size_t m, const Graph& G);
     friend bool readGraph(Graph& G);
+    static size_t certSize(size_t n);
 
 protected:
     size_t e;

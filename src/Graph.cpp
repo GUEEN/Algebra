@@ -108,31 +108,21 @@ int Graph::compareOrders(const Perm& F, const Perm& B, size_t p, size_t q) const
 }
 
 Certificate Graph::getCertificate(const Perm& P) const {
-    size_t l = n * (n - 1) / 2;
-    if (l % 8 == 0) {
-        l >>= 3;
-    } else {
-        l >>= 3;
-        l++;
-    }
-    if (l == 0) {
-        l = 1;
-    }
-
+    size_t l = certSize(n);
     Certificate C(l);
 
     size_t q = 0;
     byte b = 0;
 
     for (size_t i = 0; i + 1 < n; i++) {
-        for (size_t j = i + 1; j < n; j++)	{			
+        for (size_t j = i + 1; j < n; j++) {			
             b = b * 2 + A[n * P[i] + P[j]];
             q++;
             if (q % 8 == 0) {
                 C[q / 8 - 1] = b;
                 b = 0;
             }
-	}
+        }
     }
     if (q < 8 * l) {
         while (q < 8 * l) {
@@ -207,6 +197,19 @@ bool Graph::nextS(int level, Perm& Q) const {
 
 bool readGraph(std::fstream& stream, Graph& G) {
     size_t n = G.size();
+    size_t l = Graph::certSize(n);
+    Certificate cert(l);
+    Structure::readStruct(stream, cert);
+
+    if (stream.eof()) {
+        return false;
+    }
+
+    G = Graph(n, cert);
+    return true;
+}
+
+size_t Graph::certSize(size_t n) {
     size_t l = n * (n - 1) / 2;
     if (l % 8 == 0) {
         l >>= 3;
@@ -217,16 +220,7 @@ bool readGraph(std::fstream& stream, Graph& G) {
     if (l == 0) {
         l = 1;
     }
-
-    Certificate cert(l);
-    Structure::readStruct(stream, cert);
-
-    if (stream.eof()) {
-        return false;
-    }
-
-    G = Graph(n, cert);
-    return true;
+    return l;
 }
 
 Graph operator+(const Graph& G, size_t m) {

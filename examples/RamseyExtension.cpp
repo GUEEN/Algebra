@@ -1,4 +1,4 @@
-// build and write to disk all Ramsey R(G,k) graphs 
+// build and write to the disk all Ramsey R(G,k) graphs 
 // by the one-vertex extension algorithm.
 // Here we assume that G is K_3, K_4, C_4 or C_5 only.
 #include <algorithm>
@@ -11,6 +11,7 @@
 
 const std::vector<std::string> names = {"K3", "K4", "C3", "C4", "C5", "3", "4"};
 
+// class generating all feasible cones for the one-vertex extension
 class ConeGenerator {
 public:
     ConeGenerator(const Graph& H) : H(H), n(H.size()) {
@@ -174,7 +175,7 @@ private:
 
 int main(int argc, char** argv) {
     if (argc != 3) {
-        std::cout << "Wrong number of arguments. We expact graph name G and positive integer n to compute set R(G, n)" << std::endl;
+        std::cout << "Wrong number of arguments. We expact graph name G and positive integer k to compute the set R(G, k)" << std::endl;
         return 1;
     }
 
@@ -182,7 +183,7 @@ int main(int argc, char** argv) {
     size_t k = std::atoi(argv[2]);
 
     if (std::find(names.begin(), names.end(), graph_name) == names.end()) {
-        std::cout << "Wrong graph name. We expect G to be K3, K4, C4 or C5 so far" << std::endl;
+        std::cout << "Wrong graph name. We expect G to be K3, K4, C4 or C5" << std::endl;
         return 1;       
     }
     if (graph_name == "K3" || graph_name == "C3") {
@@ -219,7 +220,23 @@ int main(int argc, char** argv) {
         for (int e = 0; e <= n * (n - 1) / 2; e++) {
             size_t qed = 0;
             for (int d = 0; d <= n && d <= e; d++) {
-		GraphSet graphs(n);
+                std::string path = address + "R(" + graph_name + "," + std::to_string(k) + ";" + std::to_string(n) 
+                                 + "," + std::to_string(e) + "," + std::to_string(d) + ").gr";
+                std::ifstream file;
+                file.open(path, std::ios::in | std::ios::binary);
+                if (file.good()) {                    
+                    file.seekg(0, std::ios_base::end);
+                    size_t size = file.tellg() / Graph::certSize(n);
+                    while (qe.size() <= e) {
+                        qe.push_back(0);
+                    }
+
+                    qe[e] += size;
+                    qed += size;
+                    continue;
+                }
+
+                GraphSet graphs(n);
                 for (int dd = std::max(d - 1, 0); dd <= n - 1; dd++) {
                     std::string filename = address + "R(" + graph_name + "," + std::to_string(k) + ";" +
                                            std::to_string(n - 1) + "," + std::to_string(e - d) + "," + std::to_string(dd) + ").gr";
@@ -272,9 +289,6 @@ int main(int argc, char** argv) {
 
                     qe[e] += graphs.size();
                     qed += graphs.size();
-
-                    std::string path = address + "R(" + graph_name + "," + std::to_string(k) + ";" + std::to_string(n) 
-                                     + "," + std::to_string(e) + "," + std::to_string(d) + ").gr";
                     graphs.write(path);
                 }
             }
