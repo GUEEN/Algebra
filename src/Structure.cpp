@@ -608,6 +608,10 @@ size_t StructSet::size() const {
     return data_.size();
 }
 
+bool StructSet::empty() const {
+    return data_.empty();
+}
+
 void StructSet::clear() {
     data_.clear();
 }

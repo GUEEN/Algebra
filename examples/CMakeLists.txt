@@ -10,6 +10,12 @@ target_link_libraries(one_vertex
     source
 )
 
+add_executable(gluing RamseyGluing.cpp)
+
+target_link_libraries(gluing
+    source
+)
+
 include_directories(
     PRIVATE ${PROJECT_SOURCE_DIR}/inc
 )
