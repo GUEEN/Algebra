@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <chrono>
 #include <sys/stat.h>
 
 #include "Graph.h"
@@ -26,7 +27,8 @@ public:
     Glue(size_t n, size_t k, size_t d) : n(n), k(k), d(d), graphs(n * (n - 1) / 2 + 1, n) {
     }
 
-    void checkGraph(const Graph& G) {
+    void checkGraph(const Graph& G0) {
+        G = G0;
         DG = G.getDegrees();
         min.clear();
         for (int i = 0; i < G.size(); i++) {
@@ -41,12 +43,12 @@ public:
             }
         }
 
-        getIntervals(G);
-        getIndependent(G);
+        getIntervals();
+        Independent = FsInts;
 
         // Intervals = new Interval[d];
         std::vector<Interval> Intervals(d);
-        nextInterval(G, Intervals, 0);
+        nextInterval(Intervals, 0);
     }
 
     GraphSet& operator[](size_t e) {
@@ -55,16 +57,16 @@ public:
 
 private:
 
-    void getIntervals(const Graph& G) {
-        R3G = G;
+    void getIntervals() {
         FsInts.clear();
         //List<int> A = new List<int>();
         //List<int> X = new List<int>();
-        getI(std::vector<int>(), std::vector<int>());
+        std::vector<int> A;
+        getI(A, std::vector<int>());
     }
 
-    void getI(std::vector<int> A, std::vector<int> X) {
-        std::vector<int> u(R3G.size() + 1);
+    void getI(std::vector<int>& A, const std::vector<int>& X) {
+        std::vector<int> u(G.size() + 1);
 
         for (size_t i = 0; i < A.size(); i++) {
             u[A[i]] = 1;
@@ -74,15 +76,15 @@ private:
         }
 
         std::vector<int> L = A;
-        nextVex(R3G, L, u);
+        nextVex(L, u);
         FsInts.emplace_back(A, L);
         std::vector<int> XX = X;
 
-        for (int ii = 0; ii < R3G.size(); ii++) {
+        for (int ii = 0; ii < G.size(); ii++) {
             if (u[ii] == 0) {
                 bool B = true;
                 for (int jj = 0; jj < A.size(); jj++) {
-                    if (R3G.edge(ii, A[jj])) {
+                    if (G.edge(ii, A[jj])) {
                         B = false;
                     }
                 }
@@ -96,71 +98,29 @@ private:
         }
     }
 
-    void getIndependent(const Graph& G) {
-        Independent.clear();
-        getInd(G, std::vector<int>(), std::vector<int>());
-    }
-
-    void getInd(const Graph& G, std::vector<int> A, const std::vector<int>& X) {
-        std::vector<int> u(R3G.size() + 1);
-        for (int i = 0; i < A.size(); i++) {
-            u[A[i]] = 1;
-        }
-        for (int i = 0; i < X.size(); i++) {
-            u[X[i]] = 2;
-        }
-        std::vector<int> L = A;
-        nextVex(G, L, u);
-        Independent.emplace_back(A, L);
-
-        std::vector<int> XX = X;
-
-        for (int ii = 0; ii < G.size(); ii++) {
-            if (u[ii] == 0) {
-                bool B = true;
-                for (int jj = 0; jj < A.size(); jj++) {
-                    if (G.edge(ii, A[jj])) {
-                        B = false;
-                    }
-                }
-                if (B) {
-                    A.push_back(ii);
-                    getInd(G, A, XX);
-                    A.pop_back();
-                    XX.push_back(ii);
-                }
-            }
-        }
-    }
-
-    void nextInterval(const Graph& G, std::vector<Interval> Ints, int level) {
+    void nextInterval(std::vector<Interval> Ints, int level) {
         H = Graph(level);
 
         GSets.clear();
         // fill GSets with all indenendent subsets with >= 2 elements
-        nextGV(std::vector<int>());
+        std::vector<int> L;
+        nextGV(L);
 
         if (level < d) {
-            collapse(G, Ints, level);
+            collapse(Ints, level);
             if (!FAIL) {
                 for (const Interval& I : FsInts) {
-                    std::vector<Interval> IInts(d);
-
-                    for (int ii = 0; ii < level; ii++) {
-                        IInts[ii] = Ints[ii];
-                    }
-
-                    IInts[level] = I;
-                    nextInterval(G, IInts, level + 1);
-               }
-           }
+                    Ints[level] = I;
+                    nextInterval(Ints, level + 1);
+                }
+            }
         } else {
             // this happens when we have all intervals at least
-            checkIntervals(G, Ints);
+            checkIntervals(Ints);
         }
     }
 
-    void nextGV(std::vector<int> L) {
+    void nextGV(std::vector<int>& L) {
         if (L.empty()) {
             for (int i = 0; i < H.size(); i++) {
                 L.push_back(i);
@@ -181,7 +141,7 @@ private:
         }
     }
 
-    void nextVex(const Graph& G, std::vector<int>& L, std::vector<int>& u) {
+    void nextVex(std::vector<int>& L, std::vector<int>& u) {
         int ii = 0;
         bool B = true;
         while (ii < G.size() && B) {
@@ -199,12 +159,12 @@ private:
         if (!B) {
             L.push_back(ii);
             u[ii] = 1;
-            nextVex(G, L, u);
+            nextVex(L, u);
         }
     }
 
-    void checkIntervals(const Graph& G, std::vector<Interval> Ints) {
-        collapse(G, Ints, d);
+    void checkIntervals(std::vector<Interval>& Ints) {
+        collapse(Ints, d);
         if (!FAIL) {
             int j = 0;
             bool B = false;
@@ -234,7 +194,7 @@ private:
                 }
 
                 IInts[j].B.push_back(w);
-                checkIntervals(G, IInts);
+                checkIntervals(IInts);
 
                 IInts.clear();
                 for (int ii = 0; ii < d; ii++) {
@@ -245,7 +205,7 @@ private:
                 auto f = std::find(IInts[j].T.begin(), IInts[j].T.end(), w);
                 IInts[j].T.erase(f);
 
-                checkIntervals(G, IInts);
+                checkIntervals(IInts);
 
             } else {
                 //mmmmm  we have a new (C4,k)-good graph, oh yes!
@@ -266,7 +226,7 @@ private:
         }
     }
 
-    void collapse(const Graph& G, std::vector<Interval>& Ints, int level) {
+    void collapse(std::vector<Interval>& Ints, int level) {
         FAIL = false;
         bool CC = false;
         do {
@@ -338,7 +298,9 @@ private:
                     for (int i = 0; i < Independent.size() && !FAIL; i++) {
                         bool B = true;
                         for (int j = 0; j < Independent[i].B.size(); j++) {
-                            if (u[Independent[i].B[j]] == 1) B = false;
+                            if (u[Independent[i].B[j]] == 1) {
+                                B = false;
+                            }
                         }
                         if (B) {
                             int qq = 0;
@@ -357,7 +319,7 @@ private:
                     }
 
                     if (!FAIL) {
-                        //modification of intervals. Really important, but I decide to modify it for all independents simultaneously. I'll begin this tomorrow. 15.11.11. LV
+                        //modification of intervals
                         std::vector<int> w(n);
                         for (size_t i = 0; i < Independent.size(); i++) {
                             int qq = 0;
@@ -405,7 +367,7 @@ private:
         } while (CC);
     }
 
-    Graph R3G;
+    Graph G;
     Graph H;
 
     bool FAIL;
@@ -423,8 +385,10 @@ private:
 };
 
 int main() {
-    size_t k = 7;
-    size_t n = 22;
+    auto start = std::chrono::steady_clock::now();
+
+    size_t k = 6;
+    size_t n = 16;
 
     std::string graph_name = "3";
 
@@ -481,4 +445,9 @@ int main() {
 
     std::cout << "---------------------" << std::endl;
     std::cout << q << std::endl;
+    
+    auto end = std::chrono::steady_clock::now();
+    std::cout << "Elapsed time in milliseconds : " 
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+              << " ms" << std::endl;
 }
