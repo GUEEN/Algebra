@@ -180,25 +180,22 @@ private:
                 std::vector<int> u(n);
                 int w = 0;
 
-                for (int i = 0; i < Ints[j].B.size(); i++) {
-                    u[Ints[j].B[i]] = 1;
+                for (int x : Ints[j].B) {
+                    u[x] = 1;
                 }
-                for (int i = 0; i < Ints[j].T.size(); i++) {
-                    if (u[Ints[j].T[i]] == 0) {
-                        w = Ints[j].T[i];
+                for (int x : Ints[j].T) {
+                    if (u[x] == 0) {
+                        w = x;
                     }
                 }
-                std::vector<Interval> IInts(d);
-                for (int ii = 0; ii < d; ii++) {
-                    IInts[ii] = Ints[ii];
-                }
+                std::vector<Interval> IInts = Ints;
 
                 IInts[j].B.push_back(w);
                 checkIntervals(IInts);
 
                 IInts.clear();
-                for (int ii = 0; ii < d; ii++) {
-                    IInts.push_back(Ints[ii]);
+                for (int i = 0; i < d; i++) {
+                    IInts.push_back(Ints[i]);
                 }
               
                 //IInts[j].T.Remove(w);                         
@@ -210,13 +207,13 @@ private:
             } else {
                 //mmmmm  we have a new (C4,k)-good graph, oh yes!
                 Graph HH = G + (n - G.size());
-                for (int ii = 0; ii < d; ii++) {
-                    for (int jj = 0; jj < Ints[ii].T.size(); jj++) {
-                        HH.addEdge(G.size() + ii, Ints[ii].T[jj]);
+                for (int i = 0; i < d; i++) {
+                    for (int x : Ints[i].T) {
+                        HH.addEdge(G.size() + i, x);
                     }
                 }
-                for (int ii = 0; ii < d; ii++) {
-                    HH.addEdge(n - 1, G.size() + ii);
+                for (int i = 0; i < d; i++) {
+                    HH.addEdge(n - 1, G.size() + i);
                 }
 
                 size_t edge = HH.edges(); 
@@ -242,8 +239,8 @@ private:
             {
                 std::vector<int> u(n - d - 1);
                 for (int i = 0; i < level; i++) {
-                    for (int j = 0; j < Ints[i].T.size(); j++) {
-                        u[Ints[i].T[j]]++;
+                    for (int x : Ints[i].T) {
+                        u[x]++;
                     }
                 }
                 for (int i = 0; i < n - d - 1; i++) {
@@ -264,8 +261,8 @@ private:
             if (level == d) {
                 std::vector<int> u(n);
                 for (int i = 0; i < d; i++) {
-                    for (int j = 0; j < Ints[i].T.size(); j++) {
-                        u[Ints[i].T[j]] = 1;
+                    for (int x : Ints[i].T) {
+                        u[x] = 1;
                     }
                 }
                 for (int i = 0; i < min.size(); i++) {
@@ -275,7 +272,7 @@ private:
                 }
             }
 
-            //degree increases for vertice, avoiding stupid automorphisms
+            //degree increases for vertex, avoiding automorphisms
             if (!FAIL) {
                 for (int ii = 1; ii < level; ii++) {
                     if (Ints[ii - 1].B.size() > Ints[ii].T.size()) {
@@ -287,25 +284,27 @@ private:
             // check no free independent k-set. Most difficult and most important!!!!!
             if (!FAIL) {
                 for (int kk = 0; kk < GSets.size() && !FAIL; kk++) {
-                    std::vector<int> L = GSets[kk];
+                    const std::vector<int>& L = GSets[kk];
                     bool C2 = false;
                     std::vector<int> u(n);
                     for (int i = 0; i < L.size(); i++) {
-                        for (int j = 0; j < Ints[L[i]].T.size(); j++) {
-                            u[Ints[L[i]].T[j]] = 1;//colored union of all tops  vvwvwv
+                        for (int x : Ints[L[i]].T) {
+                            u[x] = 1;
+                            //colored union of all tops  vvwvwv
                         }
                     }
                     for (int i = 0; i < Independent.size() && !FAIL; i++) {
                         bool B = true;
-                        for (int j = 0; j < Independent[i].B.size(); j++) {
-                            if (u[Independent[i].B[j]] == 1) {
+                        for (int x : Independent[i].B) {
+                            if (u[x] == 1) {
                                 B = false;
+                                break;
                             }
                         }
                         if (B) {
                             int qq = 0;
-                            for (int j = 0; j < Independent[i].T.size(); j++) {
-                                if (u[Independent[i].T[j]] == 0) {
+                            for (int x : Independent[i].T) {
+                                if (u[x] == 0) {
                                     qq++;
                                 }
                             }
@@ -324,16 +323,16 @@ private:
                         for (size_t i = 0; i < Independent.size(); i++) {
                             int qq = 0;
                             std::vector<int> v(n);
-                            for (size_t j = 0; j < Independent[i].T.size(); j++) {
-                                if (u[Independent[i].T[j]] == 0) {
+                            for (int x : Independent[i].T) {
+                                if (u[x] == 0) {
                                     qq++;
-                                    v[Independent[i].T[j]] = 1;
+                                    v[x] = 1;
                                 }
                             }
                             if (qq == k - L.size() - 1) {
-                                for (size_t j = 0; j < Independent[i].T.size(); j++) {
-                                    if (v[Independent[i].T[j]] == 0) {
-                                        w[Independent[i].T[j]] = 1;
+                                for (int x : Independent[i].T) {
+                                    if (v[x] == 0) {
+                                        w[x] = 1;
                                     }
                                 }
                             }
@@ -343,13 +342,13 @@ private:
                             std::vector<int> v(n);
                             for (size_t j = 0; j < L.size(); j++) {
                                 if (j != i) {
-                                    for (int ii = 0; ii < Ints[L[j]].T.size(); ii++) {
-                                        v[Ints[L[j]].T[ii]] = 1;
+                                    for (int x : Ints[L[j]].T) {
+                                        v[x] = 1;
                                     }
                                 }
                             }
-                            for (int j = 0; j < Ints[L[i]].B.size(); j++) {
-                                v[Ints[L[i]].B[j]] = 1;
+                            for (int x : Ints[L[i]].B) {
+                                v[x] = 1;
                             }
                             for (int j = 0; j < n; j++) {
                                 if (w[j] == 1 && v[j] == 0) {
