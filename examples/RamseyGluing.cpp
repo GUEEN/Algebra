@@ -25,6 +25,20 @@ public:
 class Glue {
 public:
     Glue(size_t n, size_t k, size_t d) : n(n), k(k), d(d), graphs(n * (n - 1) / 2 + 1, n) {
+        // fill GSets with all independent subsets with >= 2 elements
+        H = Graph(d);
+        std::vector<int> L;
+        nextGV(L);
+        std::sort(GSets.begin(), GSets.end(), [](const std::vector<int>& first, const std::vector<int>& second){ 
+            return first.back() < second.back();
+        });
+
+        gpos.assign(d + 1, 0);
+        for (int i = GSets.size() - 1; i >= 0; --i) {
+            int x = GSets[i].back();
+            gpos[x] = i;
+        }
+        gpos[d] = GSets.size();
     }
 
     void checkGraph(const Graph& G0) {
@@ -59,13 +73,12 @@ private:
 
     void getIntervals() {
         FsInts.clear();
-        //List<int> A = new List<int>();
-        //List<int> X = new List<int>();
         std::vector<int> A;
-        getI(A, std::vector<int>());
+        std::vector<int> X;
+        getI(A, X);
     }
 
-    void getI(std::vector<int>& A, const std::vector<int>& X) {
+    void getI(std::vector<int>& A, std::vector<int>& X) {
         std::vector<int> u(G.size() + 1);
 
         for (size_t i = 0; i < A.size(); i++) {
@@ -78,33 +91,35 @@ private:
         std::vector<int> L = A;
         nextVex(L, u);
         FsInts.emplace_back(A, L);
-        std::vector<int> XX = X;
 
         for (int ii = 0; ii < G.size(); ii++) {
             if (u[ii] == 0) {
                 bool B = true;
-                for (int jj = 0; jj < A.size(); jj++) {
-                    if (G.edge(ii, A[jj])) {
+                for (int x : A) {
+                    if (G.edge(ii, x)) {
                         B = false;
+                        break;
                     }
                 }
                 if (B) {
                     A.push_back(ii);
-                    getI(A, XX);
+                    getI(A, X);
                     A.pop_back();
-                    XX.push_back(ii);
+                    X.push_back(ii);
                 }
             }
+        }
+        while (X.size() && u[X.back()] == 0) {
+            X.pop_back();
         }
     }
 
     void nextInterval(std::vector<Interval> Ints, int level) {
-        H = Graph(level);
-
-        GSets.clear();
+       // H = Graph(level);
+     /*   GSets.clear();
         // fill GSets with all indenendent subsets with >= 2 elements
         std::vector<int> L;
-        nextGV(L);
+        nextGV(L);*/
 
         if (level < d) {
             collapse(Ints, level);
@@ -192,20 +207,13 @@ private:
 
                 IInts[j].B.push_back(w);
                 checkIntervals(IInts);
-
-                IInts.clear();
-                for (int i = 0; i < d; i++) {
-                    IInts.push_back(Ints[i]);
-                }
               
                 //IInts[j].T.Remove(w);                         
-                auto f = std::find(IInts[j].T.begin(), IInts[j].T.end(), w);
-                IInts[j].T.erase(f);
-
-                checkIntervals(IInts);
-
+                auto f = std::find(Ints[j].T.begin(), Ints[j].T.end(), w);
+                Ints[j].T.erase(f);
+                checkIntervals(Ints);
             } else {
-                //mmmmm  we have a new (C4,k)-good graph, oh yes!
+                //we have a new good graph obtained from gluing
                 Graph HH = G + (n - G.size());
                 for (int i = 0; i < d; i++) {
                     for (int x : Ints[i].T) {
@@ -281,9 +289,9 @@ private:
                 }
             }
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            // check no free independent k-set. Most difficult and most important!!!!!
+            // check no free independent k-set. Most difficult and most important
             if (!FAIL) {
-                for (int kk = 0; kk < GSets.size() && !FAIL; kk++) {
+                for (int kk = 0; kk < gpos[level] && !FAIL; kk++) {
                     const std::vector<int>& L = GSets[kk];
                     bool C2 = false;
                     std::vector<int> u(n);
@@ -374,6 +382,7 @@ private:
     std::vector<Interval> Independent;
     std::vector<std::vector<int>> GSets;
     std::vector<size_t> DG; // degree sequence
+    std::vector<size_t> gpos;
     std::vector<int> min;
 
     const size_t n;
@@ -401,7 +410,7 @@ int main() {
     size_t q = 0;
 
     // for (d = 0; d * d - d + 1 <= n; d++)
-    for (int d = 0; d < 20; d++) {
+    for (int d = 0; d < n; d++) {
         Glue glue(n, k, d);
         for (int e = 120; e >= 0; e--) {
             for (int dd = 20; dd >= 0; dd--) {
@@ -416,23 +425,27 @@ int main() {
                     Graph G(n - d - 1);
                     while (readGraph(file, G)) {
                         glue.checkGraph(G);
-                        //NextVertex(G);
                     }
                 }
             }
         }
+        bool empty = true;
         for (size_t e = 0; e <= n * (n - 1) / 2; e++) {
             GraphSet& graphs = glue[e];
             if (graphs.empty()) {
                 continue;
+            } else {
+                empty = false;
             }
-
             std::string path = address + "R(" + graph_name + "," + std::to_string(k) + ";" + std::to_string(n) 
                                  + "," + std::to_string(e) + "," + std::to_string(d) + ").gl";
            // graphs.write(path);
 
             qe[e] += graphs.size();
             q += graphs.size();
+        }
+        if (q && empty) {
+            break;
         }
     }
 
