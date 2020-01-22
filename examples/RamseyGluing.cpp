@@ -34,6 +34,7 @@ public:
         });
 
         gpos.assign(d + 1, 0);
+        index.assign(d, 0);
         for (int i = GSets.size() - 1; i >= 0; --i) {
             int x = GSets[i].back();
             gpos[x] = i;
@@ -124,8 +125,13 @@ private:
         if (level < d) {
             collapse(Ints, level);
             if (!FAIL) {
-                for (const Interval& I : FsInts) {
-                    Ints[level] = I;
+                int ind = 0;
+                if (level) {
+                    ind = index[level - 1];
+                }
+                for (int i = ind; i < FsInts.size(); ++i) {
+                    Ints[level] = FsInts[i];
+                    index[level] = i;
                     nextInterval(Ints, level + 1);
                 }
             }
@@ -279,7 +285,7 @@ private:
                     }
                 }
             }
-
+/*
             //degree increases for vertex, avoiding automorphisms
             if (!FAIL) {
                 for (int ii = 1; ii < level; ii++) {
@@ -287,7 +293,7 @@ private:
                         FAIL = true;
                     }
                 }
-            }
+            }*/
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             // check no free independent k-set. Most difficult and most important
             if (!FAIL) {
@@ -383,7 +389,8 @@ private:
     std::vector<std::vector<int>> GSets;
     std::vector<size_t> DG; // degree sequence
     std::vector<size_t> gpos;
-    std::vector<int> min;
+    std::vector<size_t> min;
+    std::vector<size_t> index;
 
     const size_t n;
     const size_t k;
@@ -395,8 +402,8 @@ private:
 int main() {
     auto start = std::chrono::steady_clock::now();
 
-    size_t k = 6;
-    size_t n = 16;
+    size_t k = 7;
+    size_t n = 22;
 
     std::string graph_name = "3";
 
