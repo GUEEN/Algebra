@@ -11,7 +11,8 @@ public:
 
     size_t edges() const;
     bool edge(size_t i, size_t j) const;
-    size_t deg();
+    size_t deg() const;
+    void clear();
     bool subClique(size_t k) const;
     void resize(size_t m);
     std::vector<size_t> getDegrees() const;

@@ -175,7 +175,7 @@ private:
 
 int main(int argc, char** argv) {
     if (argc != 3) {
-        std::cout << "Wrong number of arguments. We expact graph name G and positive integer k to compute the set R(G, k)" << std::endl;
+        std::cout << "Wrong number of arguments. We expect graph name G and positive integer k to compute the set R(G, k)" << std::endl;
         return 1;
     }
 

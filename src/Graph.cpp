@@ -134,7 +134,7 @@ Certificate Graph::getCertificate(const Perm& P) const {
     return C;
 }
 
-size_t Graph::deg() {
+size_t Graph::deg() const {
     if (n == 0) {
         return 0;
     }
@@ -158,6 +158,11 @@ size_t Graph::deg() {
         }
     }
     return d;
+}
+
+void Graph::clear() {
+    e = 0;
+    A.assign(n * n , 0);
 }
 
 bool Graph::subClique(size_t k) const {
