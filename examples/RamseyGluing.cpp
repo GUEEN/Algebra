@@ -1,15 +1,16 @@
 // build and write to the disk all Ramsey R(G,k) graphs 
 // with a given number of >= n given by the gluing
 // algorithm
-// Here we assume that G is K_3, C_4 or C_5 only.
+// Here we assume that G is K_3 or C_4 only.
 #include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <chrono>
 #include <sys/stat.h>
 
 #include "Graph.h"
+
+const std::vector<std::string> names = {"K3", "C3", "C4", "3"};
 
 class Interval {
 public:
@@ -24,25 +25,10 @@ public:
 
 class Glue {
 public:
-    Glue(size_t n, size_t k, size_t d) : n(n), k(k), d(d), graphs(n * (n - 1) / 2 + 1, n) {
-        // fill GSets with all independent subsets with >= 2 elements
-        H = Graph(d);
-        std::vector<int> L;
-        nextGV(L);
-        std::sort(GSets.begin(), GSets.end(), [](const std::vector<int>& first, const std::vector<int>& second){ 
-            return first.back() < second.back();
-        });
-
-        gpos.assign(d + 1, 0);
-        index.assign(d, 0);
-        for (int i = GSets.size() - 1; i >= 0; --i) {
-            int x = GSets[i].back();
-            gpos[x] = i;
-        }
-        gpos[d] = GSets.size();
+    Glue(const std::string& name, size_t n, size_t k, size_t d) : graph_name(name), n(n), k(k), d(d), graphs(n * (n - 1) / 2 + 1, n) {
     }
 
-    void checkGraph(const Graph& G0) {
+    void setG(const Graph& G0) {
         G = G0;
         DG = G.getDegrees();
         min.clear();
@@ -58,10 +44,30 @@ public:
             }
         }
 
-        getIntervals();
-        Independent = FsInts;
+        getFeasibleIntervals();
+        getIndependentIntervals();
+    }
 
-        // Intervals = new Interval[d];
+    void glueGH(const Graph& H0) {
+        // H must have d vertices and contain no copy of G/e
+        H = H0;
+        DH = H.getDegrees();
+        // fill GSets with all independent subsets with >= 2 elements
+        std::vector<int> L;
+        GSets.clear();
+        nextGV(L);
+        std::sort(GSets.begin(), GSets.end(), [](const std::vector<int>& first, const std::vector<int>& second){ 
+            return first.back() < second.back();
+        });
+
+        gpos.assign(d + 1, 0);
+        index.assign(d, 0);
+        for (int i = GSets.size() - 1; i >= 0; --i) {
+            int x = GSets[i].back();
+            gpos[x] = i;
+        }
+        gpos[d] = GSets.size();
+
         std::vector<Interval> Intervals(d);
         nextInterval(Intervals, 0);
     }
@@ -72,14 +78,44 @@ public:
 
 private:
 
-    void getIntervals() {
+    void getFeasibleIntervals() {
+        Graph G0(G.size());
+        if (graph_name == "C4") {
+            for (size_t i = 0; i < G.size() - 1; i++) {
+                for (size_t j = i + 1; j < G.size(); j++) {
+                    for (size_t l = 0; l < G.size(); l++) {
+                        if (G.edge(i, l) && G.edge(l, j)) {
+                            G0.addEdge(i, j);
+                        }
+                    }
+                }
+            }
+            std::swap(G, G0);
+        }
+
         FsInts.clear();
         std::vector<int> A;
         std::vector<int> X;
-        getI(A, X);
+        getI(A, X, FsInts);
+
+        if (graph_name == "C4") {
+            std::swap(G, G0);
+        }
     }
 
-    void getI(std::vector<int>& A, std::vector<int>& X) {
+    void getIndependentIntervals() {
+        if (graph_name == "3") {
+            Independent = FsInts;
+            return;
+        }
+
+        Independent.clear();
+        std::vector<int> A;
+        std::vector<int> X;
+        getI(A, X, Independent);
+    }
+
+    void getI(std::vector<int>& A, std::vector<int>& X, std::vector<Interval>& Ints) {
         std::vector<int> u(G.size() + 1);
 
         for (size_t i = 0; i < A.size(); i++) {
@@ -91,22 +127,22 @@ private:
 
         std::vector<int> L = A;
         nextVex(L, u);
-        FsInts.emplace_back(A, L);
+        Ints.emplace_back(A, L);
 
-        for (int ii = 0; ii < G.size(); ii++) {
-            if (u[ii] == 0) {
+        for (size_t i = 0; i < G.size(); i++) {
+            if (u[i] == 0) {
                 bool B = true;
                 for (int x : A) {
-                    if (G.edge(ii, x)) {
+                    if (G.edge(i, x)) {
                         B = false;
                         break;
                     }
                 }
                 if (B) {
-                    A.push_back(ii);
-                    getI(A, X);
+                    A.push_back(i);
+                    getI(A, X, Ints);
                     A.pop_back();
-                    X.push_back(ii);
+                    X.push_back(i);
                 }
             }
         }
@@ -118,7 +154,7 @@ private:
     void nextInterval(std::vector<Interval> Ints, int level) {
        // H = Graph(level);
      /*   GSets.clear();
-        // fill GSets with all indenendent subsets with >= 2 elements
+        // fill GSets with all independent subsets with >= 2 elements
         std::vector<int> L;
         nextGV(L);*/
 
@@ -126,9 +162,22 @@ private:
             collapse(Ints, level);
             if (!FAIL) {
                 int ind = 0;
-                if (level) {
+                if (graph_name == "3" && level) {
                     ind = index[level - 1];
                 }
+                if (graph_name == "C4" && level) {
+                    if (DH[level - 1] == 0) {
+                        ind = index[level - 1];
+                    }
+                    if (DH[level] == 1) {
+                        if (level & 1) {
+                            ind = index[level - 1];
+                        } else {
+                            ind = index[level - 2];
+                        }
+                    }
+                }                
+
                 for (int i = ind; i < FsInts.size(); ++i) {
                     Ints[level] = FsInts[i];
                     index[level] = i;
@@ -220,19 +269,19 @@ private:
                 checkIntervals(Ints);
             } else {
                 //we have a new good graph obtained from gluing
-                Graph HH = G + (n - G.size());
+                Graph W = G + H + 1;
                 for (int i = 0; i < d; i++) {
                     for (int x : Ints[i].T) {
-                        HH.addEdge(G.size() + i, x);
+                        W.addEdge(G.size() + i, x);
                     }
                 }
                 for (int i = 0; i < d; i++) {
-                    HH.addEdge(n - 1, G.size() + i);
+                    W.addEdge(n - 1, G.size() + i);
                 }
 
-                size_t edge = HH.edges(); 
+                size_t edge = W.edges(); 
                 // if (Deg(HH) == d)
-                graphs[edge].insert(HH.certify());
+                graphs[edge].insert(W.certify());
             }
         }
     }
@@ -240,6 +289,7 @@ private:
     void collapse(std::vector<Interval>& Ints, int level) {
         FAIL = false;
         bool CC = false;
+        const size_t t = H.edges();
         do {
             CC = false;
             //degree inside rejection
@@ -265,8 +315,8 @@ private:
             }
 
             //min degree >= d for new vertices
-            for (int ii = 0; ii < level; ii++) {
-                if (Ints[ii].T.size() + 1 < d) {
+            for (int i = 0; i < level; i++) {
+                if (Ints[i].T.size() + DH[i] + 1 < d) {
                     FAIL = true;
                 }
             }
@@ -285,7 +335,7 @@ private:
                     }
                 }
             }
-/*
+            /*
             //degree increases for vertex, avoiding automorphisms
             if (!FAIL) {
                 for (int ii = 1; ii < level; ii++) {
@@ -294,6 +344,108 @@ private:
                     }
                 }
             }*/
+            /*
+            if (!FAIL) {
+                for (int i = 1; i < level; i++) {
+                    if (i < 2 * t) {
+                        if (i % 2 == 1 && Ints[i - 1].B.size() > Ints[i].T.size()) {
+                            FAIL = true;
+                        }
+                        if (i % 2 == 0 && Ints[i - 2].B.size() > Ints[i].T.size()) {
+                            FAIL = true;
+                        }
+                    } else if (i > 2 * t) {
+                        if (Ints[i - 1].B.size() > Ints[i].T.size()) {
+                            FAIL = true;
+                        }
+                    }
+                }
+            }*/
+
+            if (graph_name == "C4") {
+                // C4 rejection first test
+                if (!FAIL) {
+                    for (int i = 0; i < level - 1 && !FAIL; i++) {
+                        for (int j = i + 1; j < level && !FAIL; j++) {
+                            std::vector<int> u(n);
+                            for (int x : Ints[i].B) {
+                                u[x] = 1;
+                            }
+                            for (int x : Ints[j].B) {
+                                if (u[x] == 1) {
+                                    FAIL = true;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (!FAIL) {
+                    for (int ii = 0; ii < level - 1 && ii < 2 * t && !FAIL; ii += 2) {
+                        bool C2 = false;
+                        for (int x : Ints[ii].B) {
+                            for (int y : Ints[ii + 1].B) {
+                                if (G.edge(x, y)) {
+                                    FAIL = true;
+                                    break;
+                                }
+                            }
+                            if (FAIL) {
+                                break;
+                            }
+                        }
+                        if (!FAIL) {
+                            std::vector<int> U;
+                            for (int x : Ints[ii].T) {
+                                bool B = false;
+                                for (int y : Ints[ii + 1].B) {
+                                    if (G.edge(x, y)) {
+                                        B = true;
+                                        break;
+                                    }
+                                }
+
+                                if (B) {
+                                    U.push_back(x);
+                                    C2 = true;
+                                }
+                            }
+                            if (C2) {
+                                for (int x : U) {
+                                    auto f = std::find(Ints[ii].T.begin(), Ints[ii].T.end(), x);
+                                    Ints[ii].T.erase(f);
+                                }
+                            } else {
+                                U.clear();
+                                for (int x : Ints[ii + 1].T) {
+                                    bool B = false;
+                                    for (int y : Ints[ii].B) {
+                                        if (G.edge(x, y)) {
+                                            B = true;
+                                        }
+                                    }
+                                    if (B) {
+                                        U.push_back(x);
+                                    }
+                                    if (B) {
+                                        C2 = true;
+                                    }
+                                }
+                                if (C2) {
+                                    for (int x : U) {
+                                        auto f = std::find(Ints[ii + 1].T.begin(), Ints[ii + 1].T.end(), x);
+                                        Ints[ii + 1].T.erase(f);
+                                    }
+                                }
+                            }
+                        }
+                        if (C2) {
+                            CC = true;
+                        }
+                    }
+                }
+            }
+
             // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             // check no free independent k-set. Most difficult and most important
             if (!FAIL) {
@@ -387,11 +539,12 @@ private:
     std::vector<Interval> FsInts;
     std::vector<Interval> Independent;
     std::vector<std::vector<int>> GSets;
-    std::vector<size_t> DG; // degree sequence
+    std::vector<size_t> DG;
+    std::vector<size_t> DH;
     std::vector<size_t> gpos;
     std::vector<size_t> min;
     std::vector<size_t> index;
-
+    const std::string graph_name;
     const size_t n;
     const size_t k;
     const size_t d;
@@ -399,74 +552,179 @@ private:
     std::vector<GraphSet> graphs;
 };
 
-int main() {
-    auto start = std::chrono::steady_clock::now();
+int main(int argc, char** argv) {
+    if (argc != 4) {
+        std::cout << "Wrong number of arguments. We expect graph name G, positive integer k, and positive integer n to compute the set R(G, k, >=n)" << std::endl;
+        return 1;
+    }
 
-    size_t k = 7;
-    size_t n = 22;
+    std::string graph_name = argv[1];
+    size_t k = std::atoi(argv[2]);
+    size_t n0 = std::atoi(argv[3]);
 
-    std::string graph_name = "3";
+    if (std::find(names.begin(), names.end(), graph_name) == names.end()) {
+        std::cout << "Wrong graph name. We expect G to be K3 or C4" << std::endl;
+        return 1;
+    }
+    if (graph_name == "K3" || graph_name == "C3") {
+        graph_name = "3";
+    }
 
-   // mkdir("../data/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-   // mkdir("../data/RAMSEY/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    mkdir("../data/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    mkdir("../data/RAMSEY/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     const std::string address = "../data/RAMSEY/R(" + graph_name + "," + std::to_string(k - 1) + ")/";
-   // mkdir(address.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    const std::string new_address = "../data/RAMSEY/R(" + graph_name + "," + std::to_string(k) + ")/";
+    mkdir(new_address.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
-    std::vector<size_t> qv;
-    std::vector<size_t> qe(n * (n - 1) / 2 + 1);
-    size_t q = 0;
+    size_t all = 0;
+    std::vector<size_t> qv(n0);
+    std::vector<size_t> qe;
+    std::vector<std::vector<size_t>> qve(n0);
 
-    // for (d = 0; d * d - d + 1 <= n; d++)
-    for (int d = 0; d < n; d++) {
-        Glue glue(n, k, d);
-        for (int e = 120; e >= 0; e--) {
-            for (int dd = 20; dd >= 0; dd--) {
-                 // if (dd + 1 >= d)
-                std::string path = address + "R(" + graph_name + "," + std::to_string(k - 1) + ";" + std::to_string(n - d - 1) 
+    for (int n = n0;; n++) {
+        size_t q = 0;
+        std::vector<size_t> ve;
+        for (int d = 0; d < n; d++) {
+            if (graph_name == "C4" && d * d - d + 1 > n) {
+                break;
+            }
+
+            Glue glue(graph_name, n, k, d);
+            std::vector<Graph> hGraphs;
+            if (graph_name == "3") {
+                hGraphs.emplace_back(d);
+            }
+            if (graph_name == "C4") {
+                // adding P2-free graphs to a list
+                for (size_t t = 0; 2 * t <= d && d < k + t; t++) {
+                    Graph H(d);
+                    for (size_t s = 0; s < t; ++s) {
+                        H.addEdge(2 * s, 2 * s + 1);
+                    }
+                    hGraphs.push_back(std::move(H));
+                }
+            }
+
+            for (int e = (n - d - 2) * (n - d - 1) / 2; e >= 0; e--) {
+                for (int dd = n - d - 1; dd >= 0; dd--) {
+                    if (graph_name == "C4" && dd + 1 < d) {
+                        break;
+                    }
+
+                    std::string path = address + "R(" + graph_name + "," + std::to_string(k - 1) + ";" + std::to_string(n - d - 1) 
                                  + "," + std::to_string(e) + "," + std::to_string(dd) + ").gr";
-                std::fstream file;
-                file.open(path, std::ios::in | std::ios::binary);
-
-                if (file.good()) {
-                   // std::cout << path << " is good" << std::endl;
-                    Graph G(n - d - 1);
-                    while (readGraph(file, G)) {
-                        glue.checkGraph(G);
+                    std::fstream file;
+                    file.open(path, std::ios::in | std::ios::binary);
+                    if (file.good()) {
+                        Graph G(n - d - 1);
+                        while (readGraph(file, G)) {
+                            glue.setG(G);
+                            for (const Graph& H : hGraphs) {
+                                glue.glueGH(H);
+                            }
+                        }
                     }
                 }
             }
-        }
-        bool empty = true;
-        for (size_t e = 0; e <= n * (n - 1) / 2; e++) {
-            GraphSet& graphs = glue[e];
-            if (graphs.empty()) {
-                continue;
-            } else {
-                empty = false;
-            }
-            std::string path = address + "R(" + graph_name + "," + std::to_string(k) + ";" + std::to_string(n) 
-                                 + "," + std::to_string(e) + "," + std::to_string(d) + ").gl";
-           // graphs.write(path);
+            bool empty = true;
+            for (size_t e = 0; e <= n * (n - 1) / 2; e++) {
+                GraphSet& graphs = glue[e];
+                while (ve.size() <= e) {
+                    ve.push_back(0);
+                }
+                ve[e] += graphs.size();
+                if (graphs.empty()) {
+                    continue;
+                } else {
+                    empty = false;
+                }
+                std::string path = new_address + "R(" + graph_name + "," + std::to_string(k) + ";" + std::to_string(n) 
+                                               + "," + std::to_string(e) + "," + std::to_string(d) + ").gr";
+               /* std::ifstream file;
+                file.open(path, std::ios::in | std::ios::binary);
+                if (!file.good()) {
+                    file.close();
+                    graphs.write(path);
+                }*/
+                while (qe.size() <= e) {
+                    qe.push_back(0);
+                }
 
-            qe[e] += graphs.size();
-            q += graphs.size();
+                qe[e] += graphs.size();
+                q += graphs.size();
+            }
+            if (q && empty) {
+                break;
+            }
         }
-        if (q && empty) {
+        if (q == 0) {
             break;
         }
+        qv.push_back(q);
+        all += q;
+        qve.push_back(std::move(ve));
     }
 
-    for (int e = 0; e <= n * (n - 1) / 2; ++e) {
-        if (qe[e]) {
-            std::cout << e << "   " << qe[e] << std::endl;
+    // writing output
+    auto lspace = [](size_t l, std::string s)->std::string {
+        if (s.length() < l) {
+            return std::string(l - s.length(), ' ') + s;
+        } else {
+            return s;
         }
-    }
+    };
+    auto rspace = [](size_t l, std::string s)->std::string {
+        if (s.length() < l) {
+            return s + std::string(l - s.length(), ' ');
+        } else {
+            return s;
+        }
+    };
 
-    std::cout << "---------------------" << std::endl;
-    std::cout << q << std::endl;
-    
-    auto end = std::chrono::steady_clock::now();
-    std::cout << "Elapsed time in milliseconds : " 
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
-              << " ms" << std::endl;
+    std::string title = "R(" + graph_name + "," + std::to_string(k) + ")";
+    std::string first_line = title;
+    std::string last_line = lspace(title.length(), "");
+    first_line.push_back('|');
+    last_line.push_back('|');
+    for (size_t i = n0; i < qv.size(); ++i) {
+        size_t l = std::max(std::to_string(qv[i]).length(), std::to_string(i).length()) + 1;
+        first_line += lspace(l, std::to_string(i));
+        last_line += lspace(l, std::to_string(qv[i]));
+    }
+    first_line.push_back('|');
+    last_line.push_back('|');
+    first_line += rspace(std::to_string(all).length(), "");
+    last_line += std::to_string(all);
+    std::string hor_line(last_line.length(), '-');
+    hor_line[title.length()] = '+';
+    hor_line[last_line.size() - std::to_string(all).length() - 1] = '+';
+
+    std::cout << first_line << std::endl;
+    std::cout << hor_line << std::endl;
+    int j0 = 0;
+    while (j0 < qe.size() && qe[j0] == 0) {
+        j0++;
+    }
+    for (size_t j = j0; j < qe.size(); ++j) {
+        std::string line = lspace(title.length(), std::to_string(j));
+        line.push_back('|');
+        for (size_t i = n0; i < qv.size(); ++i) {
+            size_t l = std::max(std::to_string(qv[i]).length(), std::to_string(i).length()) + 1;
+            size_t q = 0;
+            if (j < qve[i].size()) {
+                q = qve[i][j];
+            }
+            if (q) {
+                line += lspace(l, std::to_string(q));
+            } else {
+                line += lspace(l, "");
+            }
+        }
+        line.push_back('|');
+        line += rspace(std::to_string(all).length(), std::to_string(qe[j]));
+        std::cout << line << std::endl;
+    }
+    std::cout << hor_line << std::endl;
+    std::cout << last_line << std::endl;
+    return 0;
 }
