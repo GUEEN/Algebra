@@ -58,11 +58,11 @@ public:
 
     class iterator {
     public:
-        iterator(const GraphSet* gset, const std::unordered_set<std::string>::const_iterator& it) : gset_(gset), it_(it) {
+        iterator(const GraphSet* gset, const std::unordered_set<Certificate>::const_iterator& it) : gset_(gset), it_(it) {
         }
 
         Graph operator*() const {
-            return Graph(gset_->n, Cert(*it_));
+            return Graph(gset_->n, *it_);
         }
 
         bool operator!=(const iterator& it) {
@@ -86,7 +86,7 @@ public:
 
     private:
         const GraphSet* gset_;
-        std::unordered_set<std::string>::const_iterator it_;
+        std::unordered_set<Certificate>::const_iterator it_;
     };
 
     iterator begin() const {

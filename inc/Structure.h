@@ -14,10 +14,16 @@ typedef uint8_t byte;
 typedef std::vector<int> Degree;
 typedef std::vector<byte> Certificate;
 
+template<>
+struct std::hash<Certificate> {
+    size_t operator()(const Certificate& cert) const;
+};
+
 std::string CertToString(const Certificate& cert);
 Certificate Cert(const std::string& s);
 
 int compareCertificates(const Certificate& C, const Certificate& D);
+bool operator==(const Certificate& C, const Certificate& D);
 
 struct Cell : public Perm {
     Cell();
@@ -121,5 +127,5 @@ public:
     bool contains(const Structure& s) const;
 
 protected:
-    std::unordered_set<std::string> data_;
+    std::unordered_set<Certificate> data_;
 };

@@ -2,6 +2,15 @@
 
 #include "Structure.h"
 
+size_t std::hash<Certificate>::operator()(const Certificate& cert) const {
+    static const size_t p = 1000000009;
+    size_t h = 0;
+    for (byte b : cert) {
+        h = h * p + b;
+    }
+    return h;
+}
+
 Cell::Cell() : Perm(), counted(false), discrete(false) {
 };
 
@@ -78,6 +87,10 @@ int compareCertificates(const Certificate& C, const Certificate& D) {
     if (C[i] < D[i]) {
         return 1;
     }
+}
+
+bool operator==(const Certificate& C, const Certificate& D) {
+    return compareCertificates(C, D) == 0;
 }
 
 bool isomorphic(const Structure& s, const Structure& t) {
@@ -588,7 +601,7 @@ Finish:
 }
 
 void StructSet::insert(const Structure& s) {
-    data_.insert(CertToString(s.cert));
+    data_.insert(s.cert);
 }
 
 void StructSet::write(const std::string& path, bool append) const {
@@ -598,8 +611,8 @@ void StructSet::write(const std::string& path, bool append) const {
     } else {
         stream.open(path, std::ios::out | std::ios::binary);
     }
-    for (auto it = data_.begin(); it != data_.end(); it++) {
-        Structure::writeStruct(stream, Cert(*it));
+    for (const Certificate& cert : data_) {
+        Structure::writeStruct(stream, cert);
     }
     stream.close();
 }
@@ -617,5 +630,5 @@ void StructSet::clear() {
 }
 
 bool StructSet::contains(const Structure& s) const {
-    return data_.count(CertToString(s.cert));
+    return data_.count(s.cert);
 }
