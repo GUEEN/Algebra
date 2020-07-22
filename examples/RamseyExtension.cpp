@@ -263,7 +263,7 @@ int main(int argc, char** argv) {
 
                     std::vector<std::thread> threads;
                     for (int th = 0; th < num_threads; ++th) {
-                        threads.emplace_back([n, k, d, th, block_size, file_size, &graph_name, &filename, &graphs]{
+                        threads.emplace_back([n, k, d, th, block_size, graph_size, file_size, &graph_name, &filename, &graphs]{
                         Graph H(n - 1);
                         std::fstream stream;
                         stream.open(filename, std::ios::in | std::ios::binary);
@@ -272,7 +272,7 @@ int main(int argc, char** argv) {
                         }
 
                         stream.seekg(th * block_size);
-                        for (int gr = 0; gr < block_size; ++gr ) {
+                        for (int gr = 0; gr < block_size; gr += graph_size) {
                             if (!readGraph(stream, H)) {
                                 return;
                             }
