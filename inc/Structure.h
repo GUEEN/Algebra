@@ -7,6 +7,7 @@
 #include <string>
 #include <memory>
 #include <list>
+#include <mutex>
 
 #include "Group.h"
 
@@ -128,4 +129,5 @@ public:
 
 protected:
     std::unordered_set<Certificate> data_;
+    mutable std::mutex mut_;
 };

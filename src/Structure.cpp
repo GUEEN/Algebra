@@ -601,10 +601,12 @@ Finish:
 }
 
 void StructSet::insert(const Structure& s) {
+    std::lock_guard<std::mutex> lock(mut_);
     data_.insert(s.cert);
 }
 
 void StructSet::write(const std::string& path, bool append) const {
+    std::lock_guard<std::mutex> lock(mut_);
     std::fstream stream;
     if (append) {
         stream.open(path, std::ios::app | std::ios::out | std::ios::binary);
@@ -618,17 +620,21 @@ void StructSet::write(const std::string& path, bool append) const {
 }
 
 size_t StructSet::size() const {
+    std::lock_guard<std::mutex> lock(mut_);
     return data_.size();
 }
 
 bool StructSet::empty() const {
+    std::lock_guard<std::mutex> lock(mut_);
     return data_.empty();
 }
 
 void StructSet::clear() {
+    std::lock_guard<std::mutex> lock(mut_);
     data_.clear();
 }
 
 bool StructSet::contains(const Structure& s) const {
+    std::lock_guard<std::mutex> lock(mut_);
     return data_.count(s.cert);
 }
