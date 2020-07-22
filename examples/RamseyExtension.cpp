@@ -5,11 +5,14 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <sys/stat.h>
 
 #include "Graph.h"
 
 const std::vector<std::string> names = {"K3", "K4", "C3", "C4", "C5", "3", "4"};
+
+int num_threads = 8;
 
 // class generating all feasible cones for the one-vertex extension
 class ConeGenerator {
@@ -174,13 +177,16 @@ private:
 
 
 int main(int argc, char** argv) {
-    if (argc != 3) {
+    if (argc != 3 && argc != 4) {
         std::cout << "Wrong number of arguments. We expect graph name G and positive integer k to compute the set R(G, k)" << std::endl;
         return 1;
     }
 
     std::string graph_name = argv[1];
     size_t k = std::atoi(argv[2]);
+    if (argc == 4) {
+        num_threads = std::atoi(argv[3]);
+    }
 
     if (std::find(names.begin(), names.end(), graph_name) == names.end()) {
         std::cout << "Wrong graph name. We expect G to be K3, K4, C4 or C5" << std::endl;
@@ -242,44 +248,72 @@ int main(int argc, char** argv) {
                                            std::to_string(n - 1) + "," + std::to_string(e - d) + "," + std::to_string(dd) + ").gr";
                     std::fstream stream;
                     stream.open(filename, std::ios::in | std::ios::binary);
+                    size_t graph_size = Graph::certSize(n - 1);
+                    size_t block_size;
+                    size_t file_size;
                     if (!stream.good()) {
                         continue;
+                    } else {
+                        stream.seekg(0, std::ios_base::end);
+                        file_size = stream.tellg();
+                        block_size = file_size / graph_size / num_threads + 1;
+                        block_size *= graph_size;
+                        stream.close();
                     }
-                        
-                    Graph H(n - 1);
-                    while (readGraph(stream, H)) {
-                        Graph G = H + 1;
-                        if (d > 0) {
-                            ConeGenerator cg(H);
-                            std::vector<std::vector<size_t>> cones;
-                            if (graph_name == "C4") {
-                                cones = cg.getConesC4(d);
-                            } else if (graph_name == "C5") {
-                                cones = cg.getConesC5(d);
-                            } else if (graph_name == "4"){
-                                cones = cg.getConesK4(d);
-                            } else {
-                                cones = cg.getConesK3(d);
+
+                    std::vector<std::thread> threads;
+                    for (int th = 0; th < num_threads; ++th) {
+                        threads.emplace_back([n, k, d, th, block_size, file_size, &graph_name, &filename, &graphs]{
+                        Graph H(n - 1);
+                        std::fstream stream;
+                        stream.open(filename, std::ios::in | std::ios::binary);
+                        if (th * block_size >= file_size) {
+                            return;
+                        }
+
+                        stream.seekg(th * block_size);
+                        for (int gr = 0; gr < block_size; ++gr ) {
+                            if (!readGraph(stream, H)) {
+                                return;
                             }
-                            for (const auto& cone : cones) {
-                                for (size_t j = 0; j < d; j++) {
-                                    G.addEdge(cone[j], n - 1);
+                            Graph G = H + 1;
+                            if (d > 0) {
+                                ConeGenerator cg(H);
+                                std::vector<std::vector<size_t>> cones;
+                                if (graph_name == "C4") {
+                                    cones = cg.getConesC4(d);
+                                } else if (graph_name == "C5") {
+                                    cones = cg.getConesC5(d);
+                                } else if (graph_name == "4") {
+                                    cones = cg.getConesK4(d);
+                                } else {
+                                    cones = cg.getConesK3(d);
                                 }
-                                if (G.deg() == d) {
-                                    if (!G.subClique(k)) {
-                                        graphs.insert(G.certify());
+                                for (const auto &cone : cones) {
+                                    for (size_t j = 0; j < d; j++) {
+                                        G.addEdge(cone[j], n - 1);
+                                    }
+                                    if (G.deg() == d) {
+                                        if (!G.subClique(k)) {
+                                            graphs.insert(G.certify());
+                                        }
+                                    }
+                                    for (size_t j = 0; j < d; j++) {
+                                        G.killEdge(cone[j], n - 1);
                                     }
                                 }
-                                for (size_t j = 0; j < d; j++) {
-                                    G.killEdge(cone[j], n - 1);
+                            } else {
+                                if (G.subClique(k)) {
+                                    continue;
                                 }
+
+                                graphs.insert(G.certify());
                             }
-                        } else {
-                            if (G.subClique(k)) {
-                                continue;
-                            }
-                            graphs.insert(G.certify());
                         }
+                        });
+                    }
+                    for (int th = 0; th < num_threads; ++th) {
+                        threads[th].join();
                     }
                 }
                 if (graphs.size()) {
