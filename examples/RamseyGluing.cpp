@@ -7,10 +7,13 @@
 #include <fstream>
 #include <string>
 #include <sys/stat.h>
+#include <thread>
 
 #include "Graph.h"
 
 const std::vector<std::string> names = {"K3", "C3", "C4", "3"};
+
+int num_threads = 8;
 
 class Interval {
 public:
@@ -25,7 +28,7 @@ public:
 
 class Glue {
 public:
-    Glue(const std::string& name, size_t n, size_t k, size_t d) : graph_name(name), n(n), k(k), d(d), graphs(n * (n - 1) / 2 + 1, n) {
+    Glue(const std::string& name, size_t n, size_t k, size_t d) : graph_name(name), n(n), k(k), d(d) {
     }
 
     void setG(const Graph& G0) {
@@ -72,12 +75,9 @@ public:
         nextInterval(Intervals, 0);
     }
 
-    GraphSet& operator[](size_t e) {
-        return graphs[e];
-    }
+    static std::vector<std::unique_ptr<GraphSet>> graphs;
 
 private:
-
     void getFeasibleIntervals() {
         Graph G0(G.size());
         if (graph_name == "C4") {
@@ -281,7 +281,7 @@ private:
 
                 size_t edge = W.edges(); 
                 // if (Deg(HH) == d)
-                graphs[edge].insert(W.certify());
+                graphs[edge]->insert(W.certify());
             }
         }
     }
@@ -548,12 +548,12 @@ private:
     const size_t n;
     const size_t k;
     const size_t d;
-
-    std::vector<GraphSet> graphs;
 };
 
+std::vector<std::unique_ptr<GraphSet>> Glue::graphs;
+
 int main(int argc, char** argv) {
-    if (argc != 4) {
+    if (argc != 4 && argc != 5) {
         std::cout << "Wrong number of arguments. We expect graph name G, positive integer k, and positive integer n to compute the set R(G, k, >=n)" << std::endl;
         return 1;
     }
@@ -561,6 +561,9 @@ int main(int argc, char** argv) {
     std::string graph_name = argv[1];
     size_t k = std::atoi(argv[2]);
     size_t n0 = std::atoi(argv[3]);
+    if (argc == 5) {
+        num_threads = std::atoi(argv[4]);
+    }
 
     if (std::find(names.begin(), names.end(), graph_name) == names.end()) {
         std::cout << "Wrong graph name. We expect G to be K3 or C4" << std::endl;
@@ -589,7 +592,15 @@ int main(int argc, char** argv) {
                 break;
             }
 
-            Glue glue(graph_name, n, k, d);
+            std::vector<Glue> glue;
+            Glue::graphs.resize(n * (n - 1) / 2 + 1);
+            for (int i = 0; i < n * (n - 1) / 2 + 1; ++i) {
+                Glue::graphs[i] = std::make_unique<GraphSet>(n);
+            }
+            for (int th = 0; th < num_threads; ++th) {
+                glue.emplace_back(graph_name, n, k, d);
+            }
+
             std::vector<Graph> hGraphs;
             if (graph_name == "3") {
                 hGraphs.emplace_back(d);
@@ -616,19 +627,45 @@ int main(int argc, char** argv) {
                     std::fstream file;
                     file.open(path, std::ios::in | std::ios::binary);
                     if (file.good()) {
-                        Graph G(n - d - 1);
-                        while (readGraph(file, G)) {
-                            glue.setG(G);
-                            for (const Graph& H : hGraphs) {
-                                glue.glueGH(H);
+                        size_t graph_size = Graph::certSize(n - d - 1);
+                        file.seekg(0, std::ios_base::end);
+                        size_t file_size = file.tellg();
+                        size_t block_size = file_size / graph_size / num_threads + 1;
+                        block_size *= graph_size;
+                        file.close();
+
+                        std::vector<std::thread> threads;
+                        for (int th = 0; th < num_threads; ++th) {
+                            threads.emplace_back([n, d, th, block_size, graph_size, file_size, &path, &glue, &hGraphs]{
+                            std::fstream stream;
+                            stream.open(path, std::ios::in | std::ios::binary);
+                            if (th * block_size >= file_size) {
+                                return;
+                            }          
+
+                            Graph G(n - d - 1);
+                            stream.seekg(th * block_size);
+                            for (int gr = 0; gr < block_size; gr += graph_size) {
+                                if (!readGraph(stream, G)) {
+                                    return;
+                                }
+
+                                glue[th].setG(G);
+                                for (const Graph& H : hGraphs) {
+                                    glue[th].glueGH(H);
+                                }
                             }
+                            });
+                        }
+                        for (int th = 0; th < num_threads; ++th) {
+                            threads[th].join();
                         }
                     }
                 }
             }
             bool empty = true;
             for (size_t e = 0; e <= n * (n - 1) / 2; e++) {
-                GraphSet& graphs = glue[e];
+                GraphSet& graphs = *Glue::graphs[e];
                 while (ve.size() <= e) {
                     ve.push_back(0);
                 }
