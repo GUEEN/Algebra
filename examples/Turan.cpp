@@ -1,10 +1,12 @@
 // build and write to the disk all Turan EX(n,G) graphs for some bipartite graph G.
 // Here we assume that G is C_6 only.
+#include <algorithm>
 #include <vector>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
+#include <thread>
 
 #include "Graph.h"
 
@@ -44,6 +46,9 @@ public:
         one.insert(K(Hn - 1).certify());
         std::string filename = address + "Critical/Cr(" + std::to_string(Hn - 1) + ", " + graph_name + ").gr";
         one.write(filename);
+
+        DG.resize(num_threads);
+        cycles.resize(num_threads);
     }
 
     void initH() {
@@ -117,17 +122,17 @@ public:
 
 private:
 
-    void getCycles(const Graph& G) {
-        int n = G.size();
-        cycles.clear();
+    void getCycles(const Graph& G, int th) {
+        size_t n = G.size();
+        cycles[th].clear();
         // K(3,3)
-        std::vector<int> g(Hn);
-        for (int i1 = 0; i1 < n - 1; i1++)
-        for (int i2 = i1 + 1; i2 < n - 1; i2++)
+        std::vector<size_t> g(Hn);
+        for (size_t i1 = 0; i1 < n - 1; i1++)
+        for (size_t i2 = i1 + 1; i2 < n - 1; i2++)
         //for (int i3 = i2 + 1; i3 < n - 1; i3++)
-        for (int j0 = 0; j0 < n - 1; j0++)	if (G.edge(j0, n - 1) && G.edge(j0, i1) && G.edge(j0, i2))// && G.edge(j0, i3))
-        for (int j1 = j0 + 1; j1 < n - 1; j1++)	if (G.edge(j1, n - 1) && G.edge(j1, i1) && G.edge(j1, i2))// && G.edge(j1, i3))
-        for (int j2 = j1 + 1; j2 < n - 1; j2++)	if (G.edge(j2, n - 1) && G.edge(j2, i1) && G.edge(j2, i2))// && G.edge(j2, i3))
+        for (size_t j0 = 0; j0 < n - 1; j0++)	if (G.edge(j0, n - 1) && G.edge(j0, i1) && G.edge(j0, i2))// && G.edge(j0, i3))
+        for (size_t j1 = j0 + 1; j1 < n - 1; j1++)	if (G.edge(j1, n - 1) && G.edge(j1, i1) && G.edge(j1, i2))// && G.edge(j1, i3))
+        for (size_t j2 = j1 + 1; j2 < n - 1; j2++)	if (G.edge(j2, n - 1) && G.edge(j2, i1) && G.edge(j2, i2))// && G.edge(j2, i3))
         //for (int j3 = j2 + 1; j3 < n - 1; j3++)	if (G.edge(j3, n - 1) && G.edge(j3, i1) && G.edge(j3, i2) && G.edge(j3, i3))
         {
             g[0] = n - 1;
@@ -138,7 +143,7 @@ private:
             g[4] = j1;
             g[5] = j2;
             //g[7] = j3;
-            cycles.emplace_back(g);
+            cycles[th].emplace_back(g);
         }
     }
 
@@ -157,11 +162,11 @@ private:
         cliques.clear();
         if (n == Hn - 1) {
             // in this case there is only one critical graph and one clique of each size up to isomorphism
-            std::vector<int> gg(p);
-            for (int ii = 0; ii < p; ii++) {
-                gg[ii] = ii;
+            std::vector<size_t> g(p);
+            for (int i = 0; i < p; i++) {
+                g[i] = i;
             }
-            cliques.emplace_back(std::move(gg));
+            cliques.emplace_back(std::move(g));
         } else {
             perm.resize(p);
             for (int i = 0; i <= n - p; i++) {
@@ -196,14 +201,14 @@ private:
         return true;
     }
 
-    void nextCycle(Graph& G, int level) {
+    void nextCycle(Graph& G, int th, int level) {
         int n = G.size();
-        if (G.edges() < ln[n] || G.edges() > un[n] + cycles.size() - level) {
+        if (G.edges() < ln[n] || G.edges() > un[n] + cycles[th].size() - level) {
             return;
         }
-        const std::vector<int>& cycle = cycles[level];
+        const std::vector<size_t>& cycle = cycles[th][level];
 
-        if (level < cycles.size()) {
+        if (level < cycles[th].size()) {
             // do we still need to check this cycle???
             bool B = true;
             for (int ii = 0; ii < He; ii++) {
@@ -214,20 +219,20 @@ private:
             }
 
             if (!B) {
-                nextCycle(G, level + 1);
+                nextCycle(G, th, level + 1);
             } else { // we need to clean this cycle off
                 for (int ii = 0; ii < He; ii++) {
                     if (cycle[He1[ii]] != n - 1 && cycle[He2[ii]] != n - 1) {
-                        if (DG[cycle[He1[ii]]] > d && DG[cycle[He2[ii]]] > d) {
+                        if (DG[th][cycle[He1[ii]]] > d && DG[th][cycle[He2[ii]]] > d) {
                             G.killEdge(cycle[He1[ii]], cycle[He2[ii]]);
-                            DG[cycle[He1[ii]]]--;
-                            DG[cycle[He2[ii]]]--;
+                            DG[th][cycle[He1[ii]]]--;
+                            DG[th][cycle[He2[ii]]]--;
 
-                            nextCycle(G, level + 1);
+                            nextCycle(G, th, level + 1);
 
                             G.addEdge(cycle[He1[ii]], cycle[He2[ii]]);
-                            DG[cycle[He1[ii]]]++;
-                            DG[cycle[He2[ii]]]++;
+                            DG[th][cycle[He1[ii]]]++;
+                            DG[th][cycle[He2[ii]]]++;
                         }
                     }
                 }
@@ -236,20 +241,18 @@ private:
             if (G.deg() == d) {
                 if (critical(G)) {
                     G.certify();
-                    if (!CR.contains(G)) { // this is new
-                        CR.insert(G);
-                        if (n == N && G.edges() == ln[N]) {
-                            EX.insert(G);
-                        }
+                    CR.insert(G);
+                    if (n == N && G.edges() == ln[N]) {
+                        EX.insert(G);
                     }
                 }
             }
         }
     }
 
-    void deleteCycles(Graph& G) {
-        DG = G.getDegrees();
-        nextCycle(G, 0);
+    void deleteCycles(Graph& G, int th) {
+        DG[th] = G.getDegrees();
+        nextCycle(G, th, 0);
     }
 
     void getGraphs() {
@@ -270,15 +273,27 @@ private:
                         continue;
                     }
 
-                    for (const std::vector<int>& clique : cliques) {
+                    std::vector<std::thread> threads;
+                    for (int th = 0; th < num_threads; ++th) {
+                        threads.emplace_back([this, &G, n, th] {
                         Graph F = G + 1;
-                        for (int x : clique) { // adding  a vertex [n-1] of degree d to the clique [i]
-                            F.addEdge(x, n - 1);
+                        for (int i = th; i < cliques.size(); i += num_threads) {
+                            const std::vector<size_t>& clique = cliques[i];
+                            for (int x : clique) { // adding  a vertex [n-1] of degree d to the clique [i]
+                                F.addEdge(x, n - 1);
+                            }
+                            if (F.deg() >= d) {
+                                getCycles(F, th);
+                                deleteCycles(F, th); // deleting all cycles and adding new critical and extremal graphs
+                            }
+                            for (int x : clique) { // adding  a vertex [n-1] of degree d to the clique [i]
+                                F.killEdge(x, n - 1);
+                            } 
                         }
-                        if (F.deg() >= d && F.edges() >= ln[n]) {
-                            getCycles(F);
-                            deleteCycles(F); // deleting all cycles and adding new critical and extremal graphs
-                        }
+                        });
+                    }
+                    for (int th = 0; th < num_threads; ++th) {
+                        threads[th].join();
                     }
                 }
             }
@@ -315,17 +330,17 @@ private:
     std::string graph_name;
     std::string address;
 
-    std::vector<int> perm;
+    std::vector<size_t> perm;
     std::vector<size_t> ln;
     std::vector<size_t> un;
     std::vector<size_t> ex;
     std::vector<size_t> qx;
-    std::vector<size_t> DG;
-    std::vector<int> He1;
-    std::vector<int> He2;
+    std::vector<size_t> He1;
+    std::vector<size_t> He2;
 
-    std::vector<std::vector<int>> cliques;
-    std::vector<std::vector<int>> cycles;
+    std::vector<std::vector<size_t>> DG;
+    std::vector<std::vector<size_t>> cliques;
+    std::vector<std::vector<std::vector<size_t>>> cycles;
 };
 
 
