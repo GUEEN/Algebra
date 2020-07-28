@@ -16,6 +16,12 @@ target_link_libraries(gluing
     source
 )
 
+add_executable(turan Turan.cpp)
+
+target_link_libraries(turan
+    source
+)
+
 include_directories(
     PRIVATE ${PROJECT_SOURCE_DIR}/inc
 )

@@ -53,7 +53,12 @@ Graph Q(size_t n);
 // simple graphs of same size
 class GraphSet : public StructSet {
 public:
+    GraphSet() = default;
     GraphSet(size_t n) : n(n) {
+    }
+
+    void resize(int m) {
+        n = m;
     }
 
     class iterator {

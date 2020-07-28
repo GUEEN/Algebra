@@ -123,7 +123,7 @@ public:
     void insert(const Structure& s);
     size_t size() const;
     bool empty() const;
-    void write(const std::string& path, bool Append = false) const;
+    void write(const std::string& path, bool append = false) const;
     void clear();
     bool contains(const Structure& s) const;
 
