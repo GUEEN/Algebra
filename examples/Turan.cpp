@@ -1,5 +1,5 @@
 // build and write to the disk all Turan EX(n,G) graphs for some bipartite graph G.
-// Here we assume that G is C_6 only.
+// Here we assume that G is C_6, K33, or K44.
 #include <algorithm>
 #include <vector>
 #include <iostream>
@@ -10,7 +10,7 @@
 
 #include "Graph.h"
 
-const std::vector<std::string> names = {"C6", "K33"};
+const std::vector<std::string> names = {"C6", "K33", "K44"};
 
 int num_threads = 8;
 
@@ -56,6 +56,8 @@ public:
             H = C(6);
         } else if (graph_name == "K33") {
             H = K(3, 3);
+        } else if (graph_name == "K44") {
+            H = K(4, 4);
         }
 
         dH = H.deg();
@@ -125,25 +127,53 @@ private:
     void getCycles(const Graph& G, int th) {
         size_t n = G.size();
         cycles[th].clear();
-        // K(3,3)
         std::vector<size_t> g(Hn);
-        for (size_t i1 = 0; i1 < n - 1; i1++)
-        for (size_t i2 = i1 + 1; i2 < n - 1; i2++)
-        //for (int i3 = i2 + 1; i3 < n - 1; i3++)
-        for (size_t j0 = 0; j0 < n - 1; j0++)	if (G.edge(j0, n - 1) && G.edge(j0, i1) && G.edge(j0, i2))// && G.edge(j0, i3))
-        for (size_t j1 = j0 + 1; j1 < n - 1; j1++)	if (G.edge(j1, n - 1) && G.edge(j1, i1) && G.edge(j1, i2))// && G.edge(j1, i3))
-        for (size_t j2 = j1 + 1; j2 < n - 1; j2++)	if (G.edge(j2, n - 1) && G.edge(j2, i1) && G.edge(j2, i2))// && G.edge(j2, i3))
-        //for (int j3 = j2 + 1; j3 < n - 1; j3++)	if (G.edge(j3, n - 1) && G.edge(j3, i1) && G.edge(j3, i2) && G.edge(j3, i3))
-        {
-            g[0] = n - 1;
-            g[1] = i1;
-            g[2] = i2;
-            //g[3] = i3;
-            g[3] = j0;
-            g[4] = j1;
-            g[5] = j2;
-            //g[7] = j3;
-            cycles[th].emplace_back(g);
+        if (graph_name == "C6") { //   k -- j1 --  i1 -- (n - 1) -- i2 -- j2 -- k
+            for (size_t i1 = 0; i1 < n - 1; i1++) if (G.edge(i1, n - 1))
+            for (size_t i2 = i1 + 1; i2 < n - 1; i2++) if (G.edge(i2, n - 1))
+            for (size_t j1 = 0; j1 < n - 1; j1++)      if (G.edge(j1, i1) && j1 != i2)
+            for (size_t j2 = 0; j2 < n - 1; j2++)      if (G.edge(j2, i2) && j2 != i1 && j2 != j1)
+            for (size_t k = 0; k < n - 1; k++)	if (G.edge(k, j1) && G.edge(k, j2) && k != i1 && k != i2) {
+                 g[0] = n - 1;
+                 g[1] = i1;
+                 g[2] = j1;
+                 g[3] = k;
+                 g[4] = j2;
+                 g[5] = i2;
+                 cycles[th].emplace_back(g);
+            }
+        } else if (graph_name == "K33") { // (n - 1), i1, i2 =-= j0, j1, j2
+            for (size_t i1 = 0; i1 < n - 1; i1++)
+            for (size_t i2 = i1 + 1; i2 < n - 1; i2++)
+            for (size_t j0 = 0; j0 < n - 1; j0++)	if (G.edge(j0, n - 1) && G.edge(j0, i1) && G.edge(j0, i2))
+            for (size_t j1 = j0 + 1; j1 < n - 1; j1++)	if (G.edge(j1, n - 1) && G.edge(j1, i1) && G.edge(j1, i2))
+            for (size_t j2 = j1 + 1; j2 < n - 1; j2++)	if (G.edge(j2, n - 1) && G.edge(j2, i1) && G.edge(j2, i2)) {
+                 g[0] = n - 1;
+                 g[1] = i1;
+                 g[2] = i2;
+                 g[3] = j0;
+                 g[4] = j1;
+                 g[5] = j2;
+                 cycles[th].emplace_back(g);
+            }
+        } else if (graph_name == "K44") { // (n - 1), i1, i2, i3 =-= j0, j1, j2, j3
+            for (size_t i1 = 0; i1 < n - 1; i1++)
+            for (size_t i2 = i1 + 1; i2 < n - 1; i2++)
+            for (size_t i3 = i2 + 1; i3 < n - 1; i3++)
+            for (size_t j0 = 0; j0 < n - 1; j0++)	if (G.edge(j0, n - 1) && G.edge(j0, i1) && G.edge(j0, i2) && G.edge(j0, i3))
+            for (size_t j1 = j0 + 1; j1 < n - 1; j1++)	if (G.edge(j1, n - 1) && G.edge(j1, i1) && G.edge(j1, i2) && G.edge(j1, i3))
+            for (size_t j2 = j1 + 1; j2 < n - 1; j2++)	if (G.edge(j2, n - 1) && G.edge(j2, i1) && G.edge(j2, i2) && G.edge(j2, i3))
+            for (size_t j3 = j2 + 1; j3 < n - 1; j3++)	if (G.edge(j3, n - 1) && G.edge(j3, i1) && G.edge(j3, i2) && G.edge(j3, i3)) {
+                 g[0] = n - 1;
+                 g[1] = i1;
+                 g[2] = i2;
+                 g[3] = i3;
+                 g[4] = j0;
+                 g[5] = j1;
+                 g[6] = j2;
+                 g[7] = j3;
+                 cycles[th].emplace_back(g);
+            }
         }
     }
 
@@ -185,13 +215,32 @@ private:
                 }
 
                 G.addEdge(ii, jj);
-                // K(3, 3)
+
                 bool BB = false;
-                for (int i1 = 0; i1 < n && !BB; i1++) if (i1 != ii && G.edge(i1, jj))
-                for (int i2 = i1 + 1; i2 < n && !BB; i2++) if (i2 != ii && G.edge(i2, jj))
+                if (graph_name == "C6") { //  i2 -- i1 -- ii -- jj -- j1 -- j2 -- i2
+                    for (int i1 = 0; i1 < n && !BB; i1++) if (G.edge(i1, ii) && i1 != jj)
+                    for (int j1 = 0; j1 < n && !BB; j1++) if (G.edge(j1, jj) && j1 != ii && j1 != i1)
+                    for (int i2 = 0; i2 < n && !BB; i2++) if (G.edge(i1, i2) && i2 != j1 && i2 != ii && i2 != jj)
+                    for (int j2 = 0; j2 < n && !BB; j2++) if (G.edge(j1, j2) && G.edge(i2, j2) && j2 != i1 && j2 != ii && j2 != jj) {
+                        BB = true;
+                    }
+                } else if (graph_name == "K33") { // i1, i2, ii =-= jj, j1, j2
+                    for (int i1 = 0; i1 < n && !BB; i1++) if (i1 != ii && G.edge(i1, jj))
+                    for (int i2 = i1 + 1; i2 < n && !BB; i2++) if (i2 != ii && G.edge(i2, jj))
                     for (int j1 = 0; j1 < n && !BB; j1++) if (jj != j1 && G.edge(ii, j1) && G.edge(i1, j1) && G.edge(i2, j1))
-                         for (int j2 = j1 + 1; j2 < n && !BB; j2++) if (jj != j2 && G.edge(ii, j2) && G.edge(i1, j2) && G.edge(i2, j2))
-                             BB = true;
+                    for (int j2 = j1 + 1; j2 < n && !BB; j2++) if (jj != j2 && G.edge(ii, j2) && G.edge(i1, j2) && G.edge(i2, j2)) {
+                        BB = true;
+                    }
+                } else if (graph_name == "K44") { // i1, i2, i3, ii =-= jj, j1, j2, j3
+                    for (int i1 = 0; i1 < n && !BB; i1++) if (i1 != ii && G.edge(i1, jj))
+                    for (int i2 = i1 + 1; i2 < n && !BB; i2++) if (i2 != ii && G.edge(i2, jj))
+                    for (int i3 = i2 + 1; i3 < n && !BB; i3++) if (i3 != ii && G.edge(i3, jj))
+                    for (int j1 = 0; j1 < n && !BB; j1++) if (jj != j1 && G.edge(ii, j1) && G.edge(i1, j1) && G.edge(i2, j1) && G.edge(i3, j1))
+                    for (int j2 = j1 + 1; j2 < n && !BB; j2++) if (jj != j2 && G.edge(ii, j2) && G.edge(i1, j2) && G.edge(i2, j2) && G.edge(i3, j2))
+                    for (int j3 = j2 + 1; j3 < n && !BB; j3++) if (jj != j3 && G.edge(ii, j3) && G.edge(i1, j3) && G.edge(i2, j3) && G.edge(i3, j3)) {
+                        BB = true;
+                    }
+                }
                 G.killEdge(ii, jj);
                 if (!BB) {
                     return false;
