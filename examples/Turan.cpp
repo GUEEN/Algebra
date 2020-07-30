@@ -117,7 +117,6 @@ public:
         ex[N] = ln[N];
         EX.write(path);
         EX.clear();
-        CR.clear();
 
         return {ex[N], qx[N]};
     }
@@ -310,7 +309,6 @@ private:
                 continue;
             }
 
-            CR.clear();
             for (d = n - 1; d >= dH - 1; --d) {   // adding new vertex of degree  d > 0 // vertex number [n-1]
                 std::fstream stream;
                 stream.open(address + "Critical/Cr(" + std::to_string(n - 1) + ", " + graph_name + ").gr", std::ios::in | std::ios::binary);
@@ -345,12 +343,12 @@ private:
                         threads[th].join();
                     }
                 }
-            }
-
-            //adding new graphs to lists
-            std::string path = address + "Critical/Cr(" + std::to_string(n) + ", " + graph_name + ").gr";
-            if (CR.size()) {
-                CR.write(path, true);
+                //adding new graphs to lists
+                std::string path = address + "Critical/Cr(" + std::to_string(n) + ", " + graph_name + ").gr";
+                if (CR.size()) {
+                    CR.write(path, true);
+                }
+                CR.clear();
             }
         }
     }
