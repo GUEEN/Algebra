@@ -592,6 +592,32 @@ int main(int argc, char** argv) {
                 break;
             }
 
+            bool graphs_found = false;
+            for (int e = 0; e <= n * (n - 1) / 2; e++) {
+                std::string path = new_address + "R(" + graph_name + "," + std::to_string(k) + ";" + std::to_string(n) 
+                                 + "," + std::to_string(e) + "," + std::to_string(d) + ").gr";
+                std::ifstream file;
+                file.open(path, std::ios::in | std::ios::binary);
+                if (file.good()) {     
+                    graphs_found = true;               
+                    file.seekg(0, std::ios_base::end);
+                    size_t size = file.tellg() / Graph::certSize(n);
+                    while (ve.size() <= e) {
+                        ve.push_back(0);
+                    }
+                    ve[e] += size;
+                    while (qe.size() <= e) {
+                        qe.push_back(0);
+                    }
+                    qe[e] += size;
+                    q += size;
+                }
+            }
+
+            if (graphs_found) {
+                continue;
+            }
+
             std::vector<Glue> glue;
             Glue::graphs.resize(n * (n - 1) / 2 + 1);
             for (int i = 0; i < n * (n - 1) / 2 + 1; ++i) {
@@ -677,12 +703,12 @@ int main(int argc, char** argv) {
                 }
                 std::string path = new_address + "R(" + graph_name + "," + std::to_string(k) + ";" + std::to_string(n) 
                                                + "," + std::to_string(e) + "," + std::to_string(d) + ").gr";
-               /* std::ifstream file;
+                std::ifstream file;
                 file.open(path, std::ios::in | std::ios::binary);
                 if (!file.good()) {
                     file.close();
                     graphs.write(path);
-                }*/
+                }
                 while (qe.size() <= e) {
                     qe.push_back(0);
                 }
