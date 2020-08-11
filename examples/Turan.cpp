@@ -10,7 +10,7 @@
 
 #include "Graph.h"
 
-const std::vector<std::string> names = {"C6", "K33", "K44"};
+const std::vector<std::string> names = {"C4", "C6", "K33", "K44"};
 
 int num_threads = 8;
 
@@ -52,7 +52,9 @@ public:
     }
 
     void initH() {
-        if (graph_name == "C6") {
+        if (graph_name == "C4") {
+            H = C(4);
+        } else if (graph_name == "C6") {
             H = C(6);
         } else if (graph_name == "K33") {
             H = K(3, 3);
@@ -127,7 +129,17 @@ private:
         size_t n = G.size();
         cycles[th].clear();
         std::vector<size_t> g(Hn);
-        if (graph_name == "C6") { //   k -- j1 --  i1 -- (n - 1) -- i2 -- j2 -- k
+        if (graph_name == "C4") { // k -- i -- (n - 1) -- j -- k
+            for (size_t i = 0; i < n - 1; i++) if (G.edge(i, n - 1))
+            for (size_t j = i + 1; j < n - 1; j++) if (G.edge(j, n - 1))
+            for (size_t k = 0; k < n - 1; k++) if (G.edge(i, k) && G.edge(j, k)) {
+                 g[0] = n - 1;
+                 g[1] = i;
+                 g[2] = k;
+                 g[3] = j;
+                 cycles[th].emplace_back(g);
+            }
+        } else if (graph_name == "C6") { //   k -- j1 --  i1 -- (n - 1) -- i2 -- j2 -- k
             for (size_t i1 = 0; i1 < n - 1; i1++) if (G.edge(i1, n - 1))
             for (size_t i2 = i1 + 1; i2 < n - 1; i2++) if (G.edge(i2, n - 1))
             for (size_t j1 = 0; j1 < n - 1; j1++)      if (G.edge(j1, i1) && j1 != i2)
@@ -216,7 +228,12 @@ private:
                 G.addEdge(ii, jj);
 
                 bool BB = false;
-                if (graph_name == "C6") { //  i2 -- i1 -- ii -- jj -- j1 -- j2 -- i2
+                if (graph_name == "C4") { // i -- ii -- jj -- j
+                    for (int i = 0; i < n && !BB; i++) if (G.edge(i, ii))
+                    for (int j = 0; j < n && !BB; j++) if (G.edge(j, jj) && G.edge(i, j)) {
+                        BB = true;
+                    }
+                } else if (graph_name == "C6") { //  i2 -- i1 -- ii -- jj -- j1 -- j2 -- i2
                     for (int i1 = 0; i1 < n && !BB; i1++) if (G.edge(i1, ii) && i1 != jj)
                     for (int j1 = 0; j1 < n && !BB; j1++) if (G.edge(j1, jj) && j1 != ii && j1 != i1)
                     for (int i2 = 0; i2 < n && !BB; i2++) if (G.edge(i1, i2) && i2 != j1 && i2 != ii && i2 != jj)
@@ -399,7 +416,7 @@ int main(int argc, char** argv) {
 
     std::string graph_name = argv[1];
     if (std::find(names.begin(), names.end(), graph_name) == names.end()) {
-        std::cout << "Wrong graph name. We expect G to be C6" << std::endl;
+        std::cout << "Wrong graph name. We expect G to be C4, C6, K33, or K44" << std::endl;
         return 1;       
     }
     if (argc == 3) {
