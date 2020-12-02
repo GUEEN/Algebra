@@ -10,7 +10,7 @@
 
 #include "Graph.h"
 
-const std::vector<std::string> names = {"C4", "C6", "C8", "K33", "K34", "K35", "K36", "K44"};
+const std::vector<std::string> names = {"C4", "C6", "C8", "K22", "K23", "K24", "K25", "K26", "K33", "K34", "K35", "K36", "K44"};
 
 int num_threads = 8;
 
@@ -58,6 +58,14 @@ public:
             H = C(6);
         } else if (graph_name == "C8") {
             H = C(8);
+        } else if (graph_name == "K23") {
+            H = K(2, 3);
+        } else if (graph_name == "K24") {
+            H = K(2, 4);
+        } else if (graph_name == "K25") {
+            H = K(2, 5);
+        } else if (graph_name == "K26") {
+            H = K(2, 6);
         } else if (graph_name == "K33") {
             H = K(3, 3);
         } else if (graph_name == "K34") {
@@ -177,6 +185,122 @@ private:
                  g[5] = l2;
                  g[6] = j2;
                  g[7] = i2;
+                 cycles[th].emplace_back(g);
+            }
+        } else if (graph_name == "K23") { // (n - 1), i =-= j0, j1, j2
+            for (size_t i = 0; i < n - 1; i++)
+            for (size_t j0 = 0; j0 < n - 1; j0++)	if (G.edge(j0, n - 1) && G.edge(j0, i))
+            for (size_t j1 = j0 + 1; j1 < n - 1; j1++)	if (G.edge(j1, n - 1) && G.edge(j1, i))
+            for (size_t j2 = j1 + 1; j2 < n - 1; j2++)	if (G.edge(j2, n - 1) && G.edge(j2, i)) {
+                 g[0] = n - 1;
+                 g[1] = i;
+                 g[2] = j0;
+                 g[3] = j1;
+                 g[4] = j2;
+                 cycles[th].emplace_back(g);
+            }                             // (n - 1), i1, i2 =-= j0, j1
+            for (size_t i1 = 0; i1 < n - 1; i1++)
+            for (size_t i2 = i1 + 1; i2 < n - 1; i2++)
+            for (size_t j0 = 0; j0 < n - 1; j0++)	if (G.edge(j0, n - 1) && G.edge(j0, i1) && G.edge(j0, i2))
+            for (size_t j1 = j0 + 1; j1 < n - 1; j1++)	if (G.edge(j1, n - 1) && G.edge(j1, i1) && G.edge(j1, i2)) {
+                 g[0] = j0;
+                 g[1] = j1;
+                 g[2] = n - 1;
+                 g[3] = i1;
+                 g[4] = i2;
+                 cycles[th].emplace_back(g);
+            }
+        } else if (graph_name == "K24") { // (n - 1), i =-= j0, j1, j2, j3
+            for (size_t i = 0; i < n - 1; i++)
+            for (size_t j0 = 0; j0 < n - 1; j0++)	if (G.edge(j0, n - 1) && G.edge(j0, i))
+            for (size_t j1 = j0 + 1; j1 < n - 1; j1++)	if (G.edge(j1, n - 1) && G.edge(j1, i))
+            for (size_t j2 = j1 + 1; j2 < n - 1; j2++)	if (G.edge(j2, n - 1) && G.edge(j2, i))
+            for (size_t j3 = j2 + 1; j3 < n - 1; j3++)	if (G.edge(j3, n - 1) && G.edge(j3, i)) {
+                 g[0] = n - 1;
+                 g[1] = i;
+                 g[2] = j0;
+                 g[3] = j1;
+                 g[4] = j2;
+                 g[5] = j3;
+                 cycles[th].emplace_back(g);
+            }                             // (n - 1), i1, i2, i3 =-= j0, j1
+            for (size_t i1 = 0; i1 < n - 1; i1++)
+            for (size_t i2 = i1 + 1; i2 < n - 1; i2++)
+            for (size_t i3 = i2 + 1; i3 < n - 1; i3++)
+            for (size_t j0 = 0; j0 < n - 1; j0++)	if (G.edge(j0, n - 1) && G.edge(j0, i1) && G.edge(j0, i2) && G.edge(j0, i3))
+            for (size_t j1 = j0 + 1; j1 < n - 1; j1++)	if (G.edge(j1, n - 1) && G.edge(j1, i1) && G.edge(j1, i2) && G.edge(j1, i3)) {
+                 g[0] = j0;
+                 g[1] = j1;
+                 g[2] = n - 1;
+                 g[3] = i1;
+                 g[4] = i2;
+                 g[5] = i3;
+                 cycles[th].emplace_back(g);
+            }
+        } else if (graph_name == "K25") { // (n - 1), i =-= j0, j1, j2, j3, j4
+            for (size_t i = 0; i < n - 1; i++)
+            for (size_t j0 = 0; j0 < n - 1; j0++)	if (G.edge(j0, n - 1) && G.edge(j0, i))
+            for (size_t j1 = j0 + 1; j1 < n - 1; j1++)	if (G.edge(j1, n - 1) && G.edge(j1, i))
+            for (size_t j2 = j1 + 1; j2 < n - 1; j2++)	if (G.edge(j2, n - 1) && G.edge(j2, i))
+            for (size_t j3 = j2 + 1; j3 < n - 1; j3++)	if (G.edge(j3, n - 1) && G.edge(j3, i))
+            for (size_t j4 = j3 + 1; j4 < n - 1; j4++)	if (G.edge(j4, n - 1) && G.edge(j4, i)) {
+                 g[0] = n - 1;
+                 g[1] = i;
+                 g[2] = j0;
+                 g[3] = j1;
+                 g[4] = j2;
+                 g[5] = j3;
+                 g[6] = j4;
+                 cycles[th].emplace_back(g);
+            }                             // (n - 1), i1, i2, i3 =-= j0, j1, j2
+            for (size_t i1 = 0; i1 < n - 1; i1++)
+            for (size_t i2 = i1 + 1; i2 < n - 1; i2++)
+            for (size_t i3 = i2 + 1; i3 < n - 1; i3++)
+            for (size_t j0 = 0; j0 < n - 1; j0++)	if (G.edge(j0, n - 1) && G.edge(j0, i1) && G.edge(j0, i2) && G.edge(j0, i3))
+            for (size_t j1 = j0 + 1; j1 < n - 1; j1++)	if (G.edge(j1, n - 1) && G.edge(j1, i1) && G.edge(j1, i2) && G.edge(j1, i3))
+            for (size_t j2 = j1 + 1; j2 < n - 1; j2++)	if (G.edge(j2, n - 1) && G.edge(j2, i1) && G.edge(j2, i2) && G.edge(j2, i3)) {
+                 g[0] = j0;
+                 g[1] = j1;
+                 g[2] = j2;
+                 g[3] = n - 1;
+                 g[4] = i1;
+                 g[5] = i2;
+                 g[6] = i3;
+                 cycles[th].emplace_back(g);
+            }
+        } else if (graph_name == "K26") { // (n - 1), i =-= j0, j1, j2, j3, j4, j5
+            for (size_t i = 0; i < n - 1; i++)
+            for (size_t j0 = 0; j0 < n - 1; j0++)	if (G.edge(j0, n - 1) && G.edge(j0, i))
+            for (size_t j1 = j0 + 1; j1 < n - 1; j1++)	if (G.edge(j1, n - 1) && G.edge(j1, i))
+            for (size_t j2 = j1 + 1; j2 < n - 1; j2++)	if (G.edge(j2, n - 1) && G.edge(j2, i))
+            for (size_t j3 = j2 + 1; j3 < n - 1; j3++)	if (G.edge(j3, n - 1) && G.edge(j3, i))
+            for (size_t j4 = j3 + 1; j4 < n - 1; j4++)	if (G.edge(j4, n - 1) && G.edge(j4, i))
+            for (size_t j5 = j4 + 1; j5 < n - 1; j5++)	if (G.edge(j5, n - 1) && G.edge(j5, i)) {
+                 g[0] = n - 1;
+                 g[1] = i;
+                 g[2] = j0;
+                 g[3] = j1;
+                 g[4] = j2;
+                 g[5] = j3;
+                 g[6] = j4;
+                 g[7] = j5;
+                 cycles[th].emplace_back(g);
+            }                             // (n - 1), i1, i2, i3, i4, i5 =-= j0, j1
+            for (size_t i1 = 0; i1 < n - 1; i1++)
+            for (size_t i2 = i1 + 1; i2 < n - 1; i2++)
+            for (size_t i3 = i2 + 1; i3 < n - 1; i3++)
+            for (size_t i4 = i3 + 1; i4 < n - 1; i4++)
+            for (size_t i5 = i4 + 1; i5 < n - 1; i5++)
+            for (size_t j0 = 0; j0 < n - 1; j0++)	if (G.edge(j0, n - 1) && G.edge(j0, i1) && G.edge(j0, i2) && G.edge(j0, i3) && G.edge(j0, i4) && G.edge(j0, i5))
+            for (size_t j1 = j0 + 1; j1 < n - 1; j1++)	if (G.edge(j1, n - 1) && G.edge(j1, i1) && G.edge(j1, i2) && G.edge(j1, i3) && G.edge(j1, i4) && G.edge(j1, i5)) {
+                 g[0] = j0;
+                 g[1] = j1;
+                 g[2] = n - 1;
+                 g[3] = i1;
+                 g[4] = i2;
+                 g[5] = i3;
+                 g[6] = i4;
+                 g[7] = i5;
                  cycles[th].emplace_back(g);
             }
         } else if (graph_name == "K33") { // (n - 1), i1, i2 =-= j0, j1, j2
@@ -378,6 +502,62 @@ private:
                     for (int j2 = 0; j2 < n && !BB; j2++) if (G.edge(j1, j2) && j2 != i2 && j2 != i1 && j2 != ii && j2 != jj)
                     for (int i3 = 0; i3 < n && !BB; i3++) if (G.edge(i2, i3) && i3 != j2 && i3 != i2 && i3 != j1 && i3 != ii && i3 != jj)
                     for (int j3 = 0; j3 < n && !BB; j3++) if (G.edge(j2, j3) && G.edge(i3, j3) && j3 != i2 && j3 != j1 && j3 != ii && j3 != jj) {
+                        BB = true;
+                    }
+                } else if (graph_name == "K23") { // i1, ii =-= jj, j1, j2
+                    for (int i1 = 0; i1 < n && !BB; i1++) if (i1 != ii && G.edge(i1, jj))
+                    for (int j1 = 0; j1 < n && !BB; j1++) if (jj != j1 && G.edge(ii, j1) && G.edge(i1, j1))
+                    for (int j2 = j1 + 1; j2 < n && !BB; j2++) if (jj != j2 && G.edge(ii, j2) && G.edge(i1, j2)) {
+                        BB = true;
+                    }                             // i1, i2, ii =-= jj, j1
+                    for (int i1 = 0; i1 < n && !BB; i1++) if (i1 != ii && G.edge(i1, jj))
+                    for (int i2 = i1 + 1; i2 < n && !BB; i2++) if (i2 != ii && G.edge(i2, jj))
+                    for (int j1 = 0; j1 < n && !BB; j1++) if (jj != j1 && G.edge(ii, j1) && G.edge(i1, j1) && G.edge(i2, j1)) {
+                        BB = true;
+                    }
+                } else if (graph_name == "K24") { // i1, ii =-= jj, j1, j2, j3
+                    for (int i1 = 0; i1 < n && !BB; i1++) if (i1 != ii && G.edge(i1, jj))
+                    for (int j1 = 0; j1 < n && !BB; j1++) if (jj != j1 && G.edge(ii, j1) && G.edge(i1, j1))
+                    for (int j2 = j1 + 1; j2 < n && !BB; j2++) if (jj != j2 && G.edge(ii, j2) && G.edge(i1, j2))
+                    for (int j3 = j2 + 1; j3 < n && !BB; j3++) if (jj != j3 && G.edge(ii, j3) && G.edge(i1, j3)) {
+                        BB = true;
+                    }                             // i1, i2, i3, ii =-= jj, j1
+                    for (int i1 = 0; i1 < n && !BB; i1++) if (i1 != ii && G.edge(i1, jj))
+                    for (int i2 = i1 + 1; i2 < n && !BB; i2++) if (i2 != ii && G.edge(i2, jj))
+                    for (int i3 = i2 + 1; i3 < n && !BB; i3++) if (i3 != ii && G.edge(i3, jj))
+                    for (int j1 = 0; j1 < n && !BB; j1++) if (jj != j1 && G.edge(ii, j1) && G.edge(i1, j1) && G.edge(i2, j1) && G.edge(i3, j1)) {
+                        BB = true;
+                    }
+                } else if (graph_name == "K25") { // i1, ii =-= jj, j1, j2, j3, j4
+                    for (int i1 = 0; i1 < n && !BB; i1++) if (i1 != ii && G.edge(i1, jj))
+                    for (int j1 = 0; j1 < n && !BB; j1++) if (jj != j1 && G.edge(ii, j1) && G.edge(i1, j1))
+                    for (int j2 = j1 + 1; j2 < n && !BB; j2++) if (jj != j2 && G.edge(ii, j2) && G.edge(i1, j2))
+                    for (int j3 = j2 + 1; j3 < n && !BB; j3++) if (jj != j3 && G.edge(ii, j3) && G.edge(i1, j3))
+                    for (int j4 = j3 + 1; j4 < n && !BB; j4++) if (jj != j4 && G.edge(ii, j4) && G.edge(i1, j4)) {
+                        BB = true;
+                    }                             // i1, i2, i3, i4, ii =-= jj, j1
+                    for (int i1 = 0; i1 < n && !BB; i1++) if (i1 != ii && G.edge(i1, jj))
+                    for (int i2 = i1 + 1; i2 < n && !BB; i2++) if (i2 != ii && G.edge(i2, jj))
+                    for (int i3 = i2 + 1; i3 < n && !BB; i3++) if (i3 != ii && G.edge(i3, jj))
+                    for (int i4 = i3 + 1; i4 < n && !BB; i4++) if (i4 != ii && G.edge(i4, jj))
+                    for (int j1 = 0; j1 < n && !BB; j1++) if (jj != j1 && G.edge(ii, j1) && G.edge(i1, j1) && G.edge(i2, j1) && G.edge(i3, j1) && G.edge(i4, j1)) {
+                        BB = true;
+                    }
+                } else if (graph_name == "K26") { // i1, ii =-= jj, j1, j2, j3, j4, j5
+                    for (int i1 = 0; i1 < n && !BB; i1++) if (i1 != ii && G.edge(i1, jj))
+                    for (int j1 = 0; j1 < n && !BB; j1++) if (jj != j1 && G.edge(ii, j1) && G.edge(i1, j1))
+                    for (int j2 = j1 + 1; j2 < n && !BB; j2++) if (jj != j2 && G.edge(ii, j2) && G.edge(i1, j2))
+                    for (int j3 = j2 + 1; j3 < n && !BB; j3++) if (jj != j3 && G.edge(ii, j3) && G.edge(i1, j3))
+                    for (int j4 = j3 + 1; j4 < n && !BB; j4++) if (jj != j4 && G.edge(ii, j4) && G.edge(i1, j4))
+                    for (int j5 = j4 + 1; j5 < n && !BB; j5++) if (jj != j5 && G.edge(ii, j5) && G.edge(i1, j5)) {
+                        BB = true;
+                    }                             // i1, i2, i3, i4, i5, ii =-= jj, j1
+                    for (int i1 = 0; i1 < n && !BB; i1++) if (i1 != ii && G.edge(i1, jj))
+                    for (int i2 = i1 + 1; i2 < n && !BB; i2++) if (i2 != ii && G.edge(i2, jj))
+                    for (int i3 = i2 + 1; i3 < n && !BB; i3++) if (i3 != ii && G.edge(i3, jj))
+                    for (int i4 = i3 + 1; i4 < n && !BB; i4++) if (i4 != ii && G.edge(i4, jj))
+                    for (int i5 = i4 + 1; i5 < n && !BB; i5++) if (i5 != ii && G.edge(i5, jj))
+                    for (int j1 = 0; j1 < n && !BB; j1++) if (jj != j1 && G.edge(ii, j1) && G.edge(i1, j1) && G.edge(i2, j1) && G.edge(i3, j1) && G.edge(i4, j1) && G.edge(i5, j1)) {
                         BB = true;
                     }
                 } else if (graph_name == "K33") { // i1, i2, ii =-= jj, j1, j2
@@ -607,9 +787,13 @@ int main(int argc, char** argv) {
 
     std::string graph_name = argv[1];
     if (std::find(names.begin(), names.end(), graph_name) == names.end()) {
-        std::cout << "Wrong graph name. We expect G to be C4, C6, C8, K33, K34, K35, K36 or K44" << std::endl;
+        std::cout << "Wrong graph name. We expect G to be C4, C6, C8, K23, K24, K25, K26, K33, K34, K35, K36 or K44" << std::endl;
         return 1;       
     }
+    if (graph_name == "K22") {
+        graph_name = "C4";
+    }
+
     if (argc == 3) {
         num_threads = std::atoi(argv[2]);
     }
