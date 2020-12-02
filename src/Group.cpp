@@ -153,6 +153,28 @@ bool Group::isEven() const {
     return true;
 }
 
+PermList Group::getElements() const {
+    PermList elements;
+    if (Gu) {
+        PermList stab_elements = Gu->getElements();
+        for (const Perm& P : Cosets) {
+            if (P.empty()) {
+                continue;
+            }
+            for (const Perm& S : stab_elements) {
+                elements.push_back(P * S);
+            }
+        }
+    } else {
+        elements.emplace_back(n);
+    }
+    return elements;
+}
+
+PermList Group::getGenerators() const {
+    return Generators;
+}
+
 bool Group::operator<=(const Group& G) const {
     for (const Perm& P : Generators) {
         if (!G.contains(P)) {

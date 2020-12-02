@@ -61,6 +61,10 @@ public:
         n = m;
     }
 
+    std::vector<Certificate> getList() const {
+        return std::vector<Certificate>(data_.begin(), data_.end());
+    }
+
     class iterator {
     public:
         iterator(const GraphSet* gset, const std::unordered_set<Certificate>::const_iterator& it) : gset_(gset), it_(it) {

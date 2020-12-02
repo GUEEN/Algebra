@@ -18,6 +18,9 @@ public:
     bool isAbelian() const;
     bool isEven() const;
 
+    PermList getElements() const;
+    PermList getGenerators() const;
+
     bool operator<=(const Group& G) const;
     bool operator>=(const Group& G) const;
     bool operator==(const Group& G) const;
