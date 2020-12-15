@@ -1,5 +1,5 @@
 // build and write to the disk all Turan EX(n,G) graphs for some bipartite graph G.
-// Here we assume that G is C4, C6, C8, K33, K34, or K44.
+// Here we assume that G is C4, C6, C8, K23, K24, K25, K26, K33, K34, K35, K36, K44 or Q3.
 #include <algorithm>
 #include <vector>
 #include <iostream>
@@ -10,7 +10,7 @@
 
 #include "Graph.h"
 
-const std::vector<std::string> names = {"C4", "C6", "C8", "K22", "K23", "K24", "K25", "K26", "K33", "K34", "K35", "K36", "K44"};
+const std::vector<std::string> names = {"C4", "C6", "C8", "K22", "K23", "K24", "K25", "K26", "K33", "K34", "K35", "K36", "K44", "Q3"};
 
 int num_threads = 8;
 
@@ -76,6 +76,8 @@ public:
             H = K(3, 6);
         } else if (graph_name == "K44") {
             H = K(4, 4);
+        } else if (graph_name == "Q3") {
+            H = Q(3);
         }
 
         dH = H.deg();
@@ -440,6 +442,24 @@ private:
                  g[7] = j3;
                  cycles[th].emplace_back(g);
             }
+        } else if (graph_name == "Q3") {                                     
+            for (size_t i1 = 0; i1 < n - 1; ++i1) if (G.edge(i1, n - 1))     
+            for (size_t i2 = i1 + 1; i2 < n - 1; ++i2) if (G.edge(i2, n - 1))
+            for (size_t i3 = i2 + 1; i3 < n - 1; ++i3) if (G.edge(i3, n - 1))
+            for (size_t j1 = 0; j1 < n - 1; ++j1) if (G.edge(j1, i1) && G.edge(j1, i2) && j1 != i3)  
+            for (size_t j2 = 0; j2 < n - 1; ++j2) if (G.edge(j2, i1) && G.edge(j2, i3) && j2 != j1 && j2 != i2)
+            for (size_t j3 = 0; j3 < n - 1; ++j3) if (G.edge(j3, i2) && G.edge(j3, i3) && j3 != j1 && j3 != j2 && j3 != i1)  
+            for (size_t k = 0; k < n - 1; ++k) if (G.edge(k, j1) && G.edge(k, j2) && G.edge(k, j3) && k != i1 && k != i2 && k != i3) {
+                 g[0] = n - 1;
+                 g[1] = i1;
+                 g[2] = i2;
+                 g[3] = j1;
+                 g[4] = i3;
+                 g[5] = j2;
+                 g[6] = j3;
+                 g[7] = k;
+                 cycles[th].emplace_back(g);
+            }
         }
     }
 
@@ -627,6 +647,15 @@ private:
                     for (int j3 = j2 + 1; j3 < n && !BB; j3++) if (jj != j3 && G.edge(ii, j3) && G.edge(i1, j3) && G.edge(i2, j3) && G.edge(i3, j3)) {
                         BB = true;
                     }
+                } else if (graph_name == "Q3") { // i3 < i1, i2 > ii =-= jj < j1, j2 > j3
+                    for (int i1 = 0; i1 < n && !BB; i1++) if (G.edge(i1, ii))
+                    for (int i2 = i1 + 1; i2 < n && !BB; i2++) if (G.edge(i2, ii))
+                    for (int i3 = 0; i3 < n && !BB; i3++) if (i3 != ii && G.edge(i3, i1) && G.edge(i3, i2))
+                    for (int j1 = 0; j1 < n && !BB; j1++) if (j1 != ii && j1 != i2 && j1 != i3 && G.edge(j1, jj) && G.edge(j1, i1))
+                    for (int j2 = 0; j2 < n && !BB; j2++) if (j2 != ii && j2 != i1 && j2 != i3 && j2 != j1 && G.edge(j2, jj) && G.edge(j2, i2))
+                    for (int j3 = 0; j3 < n && !BB; j3++) if (j3 != ii && j3 != jj && j3 != i1 && j3 != i2 && G.edge(j3, j1) && G.edge(j3, i2) && G.edge(j3, i3)) {
+                        BB = true;
+                    }
                 }
                 G.killEdge(ii, jj);
                 if (!BB) {
@@ -787,7 +816,7 @@ int main(int argc, char** argv) {
 
     std::string graph_name = argv[1];
     if (std::find(names.begin(), names.end(), graph_name) == names.end()) {
-        std::cout << "Wrong graph name. We expect G to be C4, C6, C8, K23, K24, K25, K26, K33, K34, K35, K36 or K44" << std::endl;
+        std::cout << "Wrong graph name. We expect G to be C4, C6, C8, K23, K24, K25, K26, K33, K34, K35, K36, K44 or Q3" << std::endl;
         return 1;       
     }
     if (graph_name == "K22") {
