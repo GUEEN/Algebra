@@ -30,12 +30,6 @@ set(SOURCES
     src/Structure.cpp
 )
 
-add_library(unit_tests
-    tests/test_permutation.cpp
-    tests/test_group.cpp
-    tests/test_graph.cpp
-)
-
 include_directories(
     ${PROJECT_SOURCE_DIR}/inc
     ${PROJECT_SOURCE_DIR}/catch
