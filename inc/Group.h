@@ -17,6 +17,7 @@ public:
     uint64_t order() const;
     bool isAbelian() const;
     bool isEven() const;
+    size_t size() const;
 
     PermList getElements() const;
     PermList getGenerators() const;
@@ -46,6 +47,7 @@ Group S(size_t m);
 Group A(size_t m);
 Group Z(size_t m);
 Group D(size_t m);
+Group N(size_t p, size_t q);
 Group K4();
 Group Q8();
 Group M11();

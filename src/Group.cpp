@@ -64,6 +64,10 @@ void Group::addGen(const Perm& P) {
             u++;
         }
 
+        if (u >= n) {
+             return;
+        }
+
         NPoints = 1;
         Orbit[0] = u;
         Cosets[u].id(n);
@@ -153,6 +157,10 @@ bool Group::isEven() const {
     return true;
 }
 
+size_t Group::size() const {
+    return n;
+}
+
 PermList Group::getElements() const {
     PermList elements;
     if (Gu) {
@@ -165,7 +173,8 @@ PermList Group::getElements() const {
                 elements.push_back(P * S);
             }
         }
-    } else {
+    }
+    if (elements.empty()) {
         elements.emplace_back(n);
     }
     return elements;
@@ -265,6 +274,40 @@ Group D(size_t m) {
         P[m - i] = i;
     }		
     G.addGen(P);
+    return G;
+}
+// nonabelian group of order pq; p | (q - 1) is required for existence
+Group N(size_t p, size_t q) {
+    auto pow = [](size_t a, size_t n, size_t m) {
+        size_t r = 1;
+        while (n) {
+            if (n & 1) {
+                --n;
+                r = (r * a) % m;
+            } else {
+                n >>= 1;
+                a = (a * a) % m;
+            }
+        }
+        return r;
+    };
+    // find r such that r^p == 1 (mod q)
+    size_t r = 2;
+    while (pow(r, p, q) != 1) {
+        ++r;
+    }
+
+    Group G(q);
+    Perm P = Cycle(q);
+    Perm Q(q);
+
+    for (int i = 0; i < q; ++i) {
+        Q[i] = (i * r) % q;
+    }
+
+    G.addGen(P);
+    G.addGen(Q);
+
     return G;
 }
 // Klein four-group
