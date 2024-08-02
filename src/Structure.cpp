@@ -5,7 +5,7 @@
 size_t std::hash<Certificate>::operator()(const Certificate& cert) const {
     static const size_t p = 1000000009;
     size_t h = 0;
-    for (byte b : cert) {
+    for (auto b : cert) {
         h = h * p + b;
     }
     return h;

@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if(NOT CMAKE_BUILD_TYPE)
- set(CMAKE_BUILD_TYPE Release)
+  set(CMAKE_BUILD_TYPE Release)
 endif()
 
 #set(CMAKE_CXX_FLAGS "-lstdc++")
@@ -27,13 +27,18 @@ find_package(Catch REQUIRED)
 set(SOURCES
     src/Permutation.cpp
     src/Group.cpp
-  #  src/Structure.cpp
+    src/Structure.cpp
 )
 
 add_library(unit_tests
     tests/test_permutation.cpp
     tests/test_group.cpp
     tests/test_graph.cpp
+)
+
+include_directories(
+    ${PROJECT_SOURCE_DIR}/inc
+    ${PROJECT_SOURCE_DIR}/catch
 )
 
 add_subdirectory(tests)
