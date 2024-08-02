@@ -20,6 +20,7 @@ public:
     Perm operator+(const Perm& S) const;
     Perm operator[](const Perm& S) const;
     bool operator||(const Perm& S) const;
+    bool operator==(const Perm& S) const;
     Perm operator^(int m) const;
     Perm operator+(size_t m) const;
     Perm& operator=(int m);

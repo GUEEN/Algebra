@@ -263,6 +263,18 @@ bool Perm::operator||(const Perm& T) const {
     return true;
 }
 
+bool Perm::operator==(const Perm& T) const {
+    if (size_ != T.size_) {
+        return false;
+    }
+    for (size_t i = 0; i < size_; i++) {
+        if (data_[i] != T[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 Perm& Perm::operator=(int m) {
     for (size_t i = 0; i < size_; ++i) {
         data_[i] = m;
