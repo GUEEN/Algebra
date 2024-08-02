@@ -42,7 +42,7 @@ int main() {
                 S.addEdge(i, n - 1);
                 S.certify();
                 if (!list.contains(S)) {
-                    list.add(S);
+                    list.insert(S);
                     trees.push_back(S);
                 }
                 S.killEdge(i, n - 1);
