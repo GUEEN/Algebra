@@ -7,8 +7,11 @@
 #include <string>
 #include <sys/stat.h>
 #include <thread>
+#include <chrono> 
 
 #include "Graph.h"
+
+#define VERBOSE 1
 
 const std::vector<std::string> names = {"C4", "C6", "C8", "K22", "K23", "K24", "K25", "K26", "K33", "K34", "K35", "K36", "K44", "Q3"};
 
@@ -837,8 +840,19 @@ int main(int argc, char** argv) {
     std::cout << std::endl;
 
     for (int n = turan.start();; ++n) {
+        std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
         const auto [ex, e] = turan.compute(n);
-        std::cout << "ex(" << n << ", " << graph_name << ") = " << ex << "/" << e << std::endl;
+        std::chrono::time_point<std::chrono::system_clock> end = std::chrono::system_clock::now();
+        std::string result = "ex(" + std::to_string(n) + ", " + graph_name + ") = " + std::to_string(ex) + "/" + std::to_string(e);
+        while (result.size() < 32) {
+            result.push_back(' ');
+        }
+        std::cout << result;
+        if (VERBOSE) {
+            std::chrono::duration<float> difference = end - start;
+            std::cout << difference.count() << "s";
+        }
+        std::cout << std::endl;
     }
     return 0;
 }
