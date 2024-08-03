@@ -1,1 +1,1 @@
-# This is a project dealing with finite algebraic structures like groups, graphs, fields, semigroups, posets, etc. 
+# This is a project dealing with finite algebraic structures like groups, graphs, posets, etc. up to isomorphism
