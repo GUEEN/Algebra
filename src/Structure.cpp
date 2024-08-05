@@ -2,15 +2,6 @@
 
 #include "Structure.h"
 
-size_t std::hash<Certificate>::operator()(const Certificate& cert) const {
-    static const size_t p = 1000000009;
-    size_t h = 0;
-    for (auto b : cert) {
-        h = h * p + b;
-    }
-    return h;
-}
-
 Cell::Cell() : Perm(), counted(false), discrete(false) {
 };
 
@@ -25,23 +16,6 @@ Cell::Cell(const Cell& W, int s, int m): counted(false), discrete(false), Perm(m
 
 void Cell::sort(const std::function<int(int,int)>& comp) {
     std::sort(data_, data_ + size_, comp);
-}
-
-std::string CertToString(const Certificate& cert) {
-    std::string s;
-    for (int i = 0; i < cert.size(); i++) {
-        s.push_back(cert[i]);
-    }
-    return s;
-}
-
-Certificate Cert(const std::string& s) {
-    size_t n = s.length();
-    Certificate cert(n);
-    for (size_t i = 0; i < n; i++) {
-        cert[i] = s[i];
-    }
-    return cert;
 }
 
 Structure::Structure(size_t n): n(n), auto_group(nullptr) {
@@ -61,36 +35,6 @@ void Structure::writeStruct(std::fstream& stream, const Certificate& cert) {
 
 void Structure::readStruct(std::fstream& stream, Certificate& cert) {
     stream.read((char*)cert.data(), cert.size());
-}
-
-int compareCertificates(const Certificate& C, const Certificate& D) {
-    if (C.size() > D.size()) {
-        return -1;
-    }
-    if (C.size() < D.size()) {
-        return 1;
-    }
-    size_t l = C.size();
-    size_t i = 0;
-
-    while (i < l && C[i] == D[i]) {
-        i++;
-    }
-
-    if (i >= l) {
-        return 0;
-    }
-
-    if (C[i] > D[i]) {
-        return -1;
-    }
-    if (C[i] < D[i]) {
-        return 1;
-    }
-}
-
-bool operator==(const Certificate& C, const Certificate& D) {
-    return compareCertificates(C, D) == 0;
 }
 
 bool isomorphic(const Structure& s, const Structure& t) {

@@ -20,6 +20,7 @@ target_link_libraries(test_graph
 add_library(source STATIC
     ${PROJECT_SOURCE_DIR}/src/Permutation.cpp
     ${PROJECT_SOURCE_DIR}/src/Group.cpp
+    ${PROJECT_SOURCE_DIR}/src/Certificate.cpp    
     ${PROJECT_SOURCE_DIR}/src/Structure.cpp
     ${PROJECT_SOURCE_DIR}/src/Graph.cpp
 )
