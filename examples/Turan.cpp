@@ -7,7 +7,8 @@
 #include <string>
 #include <sys/stat.h>
 #include <thread>
-#include <chrono> 
+#include <chrono>
+#include <mutex>
 
 #include "Graph.h"
 
@@ -733,19 +734,23 @@ private:
                 std::fstream stream;
                 stream.open(address + "Critical/Cr(" + std::to_string(n - 1) + ", " + graph_name + ").gr", std::ios::in | std::ios::binary);
                 getCliques(n - 1, d);
-                Graph G(n - 1);
-                
-                while (readGraph(stream, G)) {     //reading all critical graphs with smaller number [n-1] of vertices
-                    if (G.deg() + 1 < d || G.edges() + d < ln[n]) { //if minimal degree is small enough && there are enough edges
-                        continue;
-                    }
-
-                    std::vector<std::thread> threads;
-                    for (int th = 0; th < num_threads; ++th) {
-                        threads.emplace_back([this, &G, n, th] {
+                std::mutex read_mutex;
+                std::vector<std::thread> threads;
+                for (int th = 0; th < num_threads; ++th) {
+                    threads.emplace_back([this, n, th, &stream, &read_mutex] {
+                    Graph G(n - 1);
+                    for (;;) {
+                        read_mutex.lock();
+                        bool end = readGraph(stream, G);
+                        read_mutex.unlock();
+                        if (end == false) {
+                            return;
+                        }
+		                if (G.deg() + 1 < d || G.edges() + d < ln[n]) { //if minimal degree is small enough && there are enough edges
+		                    continue;
+		                }
                         Graph F = G + 1;
-                        for (int i = th; i < cliques.size(); i += num_threads) {
-                            const std::vector<size_t>& clique = cliques[i];
+                        for (const std::vector<size_t>& clique : cliques) {
                             for (int x : clique) { // adding  a vertex [n-1] of degree d to the clique [i]
                                 F.addEdge(x, n - 1);
                             }
@@ -757,15 +762,16 @@ private:
                                 F.killEdge(x, n - 1);
                             } 
                         }
-                        });
                     }
-                    for (int th = 0; th < num_threads; ++th) {
-                        threads[th].join();
-                    }
+                    });
                 }
+                for (int th = 0; th < num_threads; ++th) {
+                    threads[th].join();
+                }
+                
                 //adding new graphs to lists
                 std::string path = address + "Critical/Cr(" + std::to_string(n) + ", " + graph_name + ").gr";
-                if (CR.size()) {
+                if (!CR.empty()) {
                     CR.write(path, true);
                 }
                 CR.clear();
@@ -832,8 +838,8 @@ int main(int argc, char** argv) {
 
     // compute as much Turan numbers as possible
     Turan turan(graph_name);
-    std::cout << "Values of Turan numbers for graph " << graph_name << std::endl;
-    std::cout << "----------------------------------";
+    std::cout << "Values of Turan numbers for the graph " << graph_name << std::endl;
+    std::cout << "--------------------------------------";
     for (char c : graph_name) {
         std::cout << "-";
     }
