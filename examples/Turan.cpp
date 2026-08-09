@@ -1,6 +1,8 @@
 // build and write to the disk all Turan EX(n,G) graphs for some bipartite graph G.
 // Here we assume that G is C4, C6, C8, K23, K24, K25, K26, K33, K34, K35, K36, K44 or Q3.
 #include <algorithm>
+#include <cstdlib>
+#include <fstream>
 #include <vector>
 #include <iostream>
 #include <sstream>
@@ -9,6 +11,7 @@
 #include <thread>
 #include <chrono>
 #include <mutex>
+#include <utility>
 
 #include "Graph.h"
 
@@ -182,7 +185,7 @@ private:
             for (size_t j1 = 0; j1 < n - 1; j1++)      if (G.edge(j1, i1) && j1 != i2)
             for (size_t j2 = 0; j2 < n - 1; j2++)      if (G.edge(j2, i2) && j2 != i1 && j2 != j1)
             for (size_t l1 = 0; l1 < n - 1; l1++)      if (G.edge(l1, j1) && l1 != i1 && l1 != i2 && l1 != j2)
-            for (size_t l2 = 0; l2 < n - 1; l2++)      if (G.edge(l2, j2) && l2 != i1 && l2 != i2 && l2 != j1 && l1 != l2)
+            for (size_t l2 = 0; l2 < n - 1; l2++)      if (G.edge(l2, j2) && l2 != i1 && l2 != i2 && l2 != j1 && l2 != l1)
             for (size_t k = 0; k < n - 1; k++)	if (G.edge(k, l1) && G.edge(k, l2) && k != i1 && k != i2 && k != j1 && k != j2) {
                  g[0] = n - 1;
                  g[1] = i1;
@@ -497,36 +500,33 @@ private:
         }
     }
 
-    bool critical(Graph& G) {
+    bool critical(const Graph& G) {
         size_t n = G.size();
         for (int ii = 0; ii < n; ii++) {
             for (int jj = ii + 1; jj < n; jj++) {
                 if (G.edge(ii, jj)) {
                     continue;
                 }
-
-                G.addEdge(ii, jj);
-
                 bool BB = false;
                 if (graph_name == "C4") { // i -- ii -- jj -- j
-                    for (int i = 0; i < n && !BB; i++) if (G.edge(i, ii))
-                    for (int j = 0; j < n && !BB; j++) if (G.edge(j, jj) && G.edge(i, j)) {
+                    for (int i = 0; i < n && !BB; i++) if (i != jj && G.edge(i, ii))
+                    for (int j = 0; j < n && !BB; j++) if (j != ii && G.edge(j, jj) && G.edge(i, j)) {
                         BB = true;
                     }
                 } else if (graph_name == "C6") { //  i2 -- i1 -- ii -- jj -- j1 -- j2 -- i2
-                    for (int i1 = 0; i1 < n && !BB; i1++) if (G.edge(i1, ii) && i1 != jj)
-                    for (int j1 = 0; j1 < n && !BB; j1++) if (G.edge(j1, jj) && j1 != ii && j1 != i1)
-                    for (int i2 = 0; i2 < n && !BB; i2++) if (G.edge(i1, i2) && i2 != j1 && i2 != ii && i2 != jj)
-                    for (int j2 = 0; j2 < n && !BB; j2++) if (G.edge(j1, j2) && G.edge(i2, j2) && j2 != i1 && j2 != ii && j2 != jj) {
+                    for (int i1 = 0; i1 < n && !BB; i1++) if (i1 != jj && G.edge(i1, ii) )
+                    for (int j1 = 0; j1 < n && !BB; j1++) if (j1 != ii && j1 != i1 && G.edge(j1, jj))
+                    for (int i2 = 0; i2 < n && !BB; i2++) if (i2 != j1 && i2 != ii && i2 != jj && G.edge(i1, i2))
+                    for (int j2 = 0; j2 < n && !BB; j2++) if (j2 != i1 && j2 != ii && j2 != jj && G.edge(j1, j2) && G.edge(i2, j2) ) {
                         BB = true;
                     }
-                } else if (graph_name == "C8") { //  i3 -- i2 -- i1 -- ii -- jj -- j1 -- j2 -- i2 -- i3
-                    for (int i1 = 0; i1 < n && !BB; i1++) if (G.edge(i1, ii) && i1 != jj)
-                    for (int j1 = 0; j1 < n && !BB; j1++) if (G.edge(j1, jj) && j1 != ii && j1 != i1)
-                    for (int i2 = 0; i2 < n && !BB; i2++) if (G.edge(i1, i2) && i2 != j1 && i2 != ii && i2 != jj)
-                    for (int j2 = 0; j2 < n && !BB; j2++) if (G.edge(j1, j2) && j2 != i2 && j2 != i1 && j2 != ii && j2 != jj)
-                    for (int i3 = 0; i3 < n && !BB; i3++) if (G.edge(i2, i3) && i3 != j2 && i3 != i2 && i3 != j1 && i3 != ii && i3 != jj)
-                    for (int j3 = 0; j3 < n && !BB; j3++) if (G.edge(j2, j3) && G.edge(i3, j3) && j3 != i2 && j3 != j1 && j3 != ii && j3 != jj) {
+                } else if (graph_name == "C8") { //  i3 -- i2 -- i1 -- ii -- jj -- j1 -- j2 -- j3 -- i3
+                    for (int i1 = 0; i1 < n && !BB; i1++) if (i1 != jj && G.edge(i1, ii))
+                    for (int j1 = 0; j1 < n && !BB; j1++) if (j1 != ii && j1 != i1 && G.edge(j1, jj))
+                    for (int i2 = 0; i2 < n && !BB; i2++) if (i2 != j1 && i2 != ii && i2 != jj && G.edge(i1, i2))
+                    for (int j2 = 0; j2 < n && !BB; j2++) if (j2 != i2 && j2 != i1 && j2 != ii && j2 != jj && G.edge(j1, j2))
+                    for (int i3 = 0; i3 < n && !BB; i3++) if (i3 != j2 && i3 != i1 && i3 != j1 && i3 != ii && i3 != jj && G.edge(i2, i3))
+                    for (int j3 = 0; j3 < n && !BB; j3++) if (j3 != i2 && j3 != i1 && j3 != ii && j3 != jj && j3 != j1 && G.edge(j2, j3) && G.edge(i3, j3)) {
                         BB = true;
                     }
                 } else if (graph_name == "K23") { // i1, ii =-= jj, j1, j2
@@ -653,16 +653,15 @@ private:
                         BB = true;
                     }
                 } else if (graph_name == "Q3") { // i3 < i1, i2 > ii =-= jj < j1, j2 > j3
-                    for (int i1 = 0; i1 < n && !BB; i1++) if (G.edge(i1, ii))
-                    for (int i2 = i1 + 1; i2 < n && !BB; i2++) if (G.edge(i2, ii))
-                    for (int i3 = 0; i3 < n && !BB; i3++) if (i3 != ii && G.edge(i3, i1) && G.edge(i3, i2))
+                    for (int i1 = 0; i1 < n && !BB; i1++) if (i1 != jj && G.edge(i1, ii))
+                    for (int i2 = i1 + 1; i2 < n && !BB; i2++) if (i2 != jj && G.edge(i2, ii))
+                    for (int i3 = 0; i3 < n && !BB; i3++) if (i3 != ii && i3 != jj && G.edge(i3, i1) && G.edge(i3, i2))
                     for (int j1 = 0; j1 < n && !BB; j1++) if (j1 != ii && j1 != i2 && j1 != i3 && G.edge(j1, jj) && G.edge(j1, i1))
                     for (int j2 = 0; j2 < n && !BB; j2++) if (j2 != ii && j2 != i1 && j2 != i3 && j2 != j1 && G.edge(j2, jj) && G.edge(j2, i2))
-                    for (int j3 = 0; j3 < n && !BB; j3++) if (j3 != ii && j3 != jj && j3 != i1 && j3 != i2 && G.edge(j3, j1) && G.edge(j3, i2) && G.edge(j3, i3)) {
+                    for (int j3 = 0; j3 < n && !BB; j3++) if (j3 != ii && j3 != jj && j3 != i1 && j3 != i2 && G.edge(j3, j1) && G.edge(j3, j2) && G.edge(j3, i3)) {
                         BB = true;
                     }
                 }
-                G.killEdge(ii, jj);
                 if (!BB) {
                     return false;
                 }
@@ -671,67 +670,110 @@ private:
         return true;
     }
 
-    void nextCycle(Graph& G, int th, int level) {
-        int n = G.size();
-        if (G.edges() < ln[n] || G.edges() > un[n] + cycles[th].size() - level) {
+    static size_t edgeIndex(size_t u, size_t v, size_t n) {
+        if (u > v) {
+            std::swap(u, v);
+        }
+        return u * n + v;
+    }
+
+    void nextCycle(Graph& G, int th, size_t level) {
+        const size_t n = G.size();
+
+        if (G.edges() < ln[n] ||
+            G.edges() > un[n] + cycles[th].size() - level) {
             return;
         }
+
         if (level == cycles[th].size()) {
-             if (G.deg() == d) {
-                if (critical(G)) {
-                    G.certify();
-                    CR.insert(G);
-                    if (n == N && G.edges() == ln[N]) {
-                        EX.insert(G);
-                    }
+            if (G.deg() == d && critical(G)) {
+                G.certify();
+                CR.insert(G);
+                if (n == static_cast<size_t>(N) && G.edges() == ln[N]) {
+                    EX.insert(G);
                 }
             }
             return;
         }
-        
+
         const std::vector<size_t>& cycle = cycles[th][level];
-        // do we still need to check this cycle???
-        bool B = true;
-        for (int ii = 0; ii < He; ii++) {
-            if (!G.edge(cycle[He1[ii]], cycle[He2[ii]])) {
-                B = false;
+
+        // If an edge of this copy has already been deleted, this copy of H
+        // is already destroyed and no decision is needed at this level.
+        bool present = true;
+        for (int ii = 0; ii < He; ++ii) {
+            const size_t u = cycle[He1[ii]];
+            const size_t v = cycle[He2[ii]];
+            if (!G.edge(u, v)) {
+                present = false;
                 break;
             }
         }
-        
-        for (int ii = 0; ii < He; ++ii) {
-            int index = cycle[He1[ii]] * n + cycle[He2[ii]];
-            if (EG[th][index] == 0) {
-                EG[th][index] = level;
-            }
-        }        
 
-        if (!B) {
+        if (!present) {
             nextCycle(G, th, level + 1);
-        } else { // we need to clean this cycle off
-            for (int ii = 0; ii < He; ii++) {
-                int index = cycle[He1[ii]] * n + cycle[He2[ii]];
-                if (EG[th][index] != level) {
-                    continue;
-                }
-                if (cycle[He1[ii]] == n - 1 || cycle[He2[ii]] == n - 1) {
-                    continue;
-                }
-                if (DG[th][cycle[He1[ii]]] <= d || DG[th][cycle[He2[ii]]] <= d) {
-                    continue;
-                }
-                G.killEdge(cycle[He1[ii]], cycle[He2[ii]]);
-                DG[th][cycle[He1[ii]]]--;
-                DG[th][cycle[He2[ii]]]--;
-                nextCycle(G, th, level + 1);
-                G.addEdge(cycle[He1[ii]], cycle[He2[ii]]);
-                DG[th][cycle[He1[ii]]]++;
-                DG[th][cycle[He2[ii]]]++;
-            }
+            return;
         }
+
+        // Build the ordered list of edges which may be deleted at this node.
+        // EG is a branch-local "forbidden edge" table. An edge forbidden by
+        // an ancestor must not be selected in this branch.
+        std::vector<std::pair<size_t, size_t>> candidates;
+        candidates.reserve(He);
+
         for (int ii = 0; ii < He; ++ii) {
-            int index = cycle[He1[ii]] * n + cycle[He2[ii]];
-            if (EG[th][index] == level) {
+            const size_t u = cycle[He1[ii]];
+            const size_t v = cycle[He2[ii]];
+
+            // The edges incident with the newly added vertex are fixed,
+            // because that vertex must retain degree d.
+            if (u == n - 1 || v == n - 1) {
+                continue;
+            }
+
+            const size_t index = edgeIndex(u, v, n);
+            if (EG[th][index] != 0) {
+                continue;
+            }
+
+            // Degrees only decrease during recursion. Hence an edge which
+            // cannot be removed now can never become removable below.
+            if (DG[th][u] <= static_cast<size_t>(d) ||
+                DG[th][v] <= static_cast<size_t>(d)) {
+                continue;
+            }
+
+            candidates.emplace_back(u, v);
+        }
+
+        // Canonical branching:
+        // In branch p, delete candidates[p] and forbid candidates[0..p-1]
+        // in all descendants. Thus every final deletion set is generated in
+        // exactly one branch: the branch corresponding to its first selected
+        // edge in this surviving copy of H.
+        for (size_t p = 0; p < candidates.size(); ++p) {
+            for (size_t q = 0; q < p; ++q) {
+                const size_t index = edgeIndex(
+                    candidates[q].first, candidates[q].second, n);
+                EG[th][index] = 1;
+            }
+
+            const size_t u = candidates[p].first;
+            const size_t v = candidates[p].second;
+
+            G.killEdge(u, v);
+            --DG[th][u];
+            --DG[th][v];
+
+            nextCycle(G, th, level + 1);
+
+            G.addEdge(u, v);
+            ++DG[th][u];
+            ++DG[th][v];
+
+            for (size_t q = 0; q < p; ++q) {
+                const size_t index = edgeIndex(
+                    candidates[q].first, candidates[q].second, n);
                 EG[th][index] = 0;
             }
         }
@@ -739,7 +781,7 @@ private:
 
     void deleteCycles(Graph& G, int th) {
         DG[th] = G.getDegrees();
-        EG[th].resize(1 + G.size() * G.size());
+        EG[th].assign(G.size() * G.size(), 0);
         nextCycle(G, th, 0);
     }
 
@@ -759,9 +801,11 @@ private:
                     threads.emplace_back([this, n, th, &stream, &read_mutex] {
                     Graph G(n - 1);
                     for (;;) {
-                        read_mutex.lock();
-                        bool end = readGraph(stream, G);
-                        read_mutex.unlock();
+                        bool end;
+                        {
+                            std::lock_guard<std::mutex> lock(read_mutex);
+                            end = readGraph(stream, G);
+                        }
                         if (end == false) {
                             return;
                         }
